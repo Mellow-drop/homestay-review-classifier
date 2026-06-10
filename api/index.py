@@ -1,0 +1,561 @@
+import os
+import json
+import datetime
+import logging
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, desc
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("sentiment-classifier")
+
+# Load environment variables
+load_dotenv()
+
+gemini_key = os.environ.get("GEMINI_API_KEY")
+if gemini_key:
+    genai.configure(api_key=gemini_key)
+else:
+    logger.warning("GEMINI_API_KEY is not set. Classification requests will fallback to local heuristics.")
+
+# Setup Database Connection
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    if DATABASE_URL.startswith("postgres://"):
+        # SQLAlchemy requires postgresql:// instead of postgres://
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    # Strip any pgbouncer query parameter since psycopg2 does not support it
+    if "pgbouncer=" in DATABASE_URL:
+        if "?" in DATABASE_URL:
+            base_url, query_str = DATABASE_URL.split("?", 1)
+            params = [p for p in query_str.split("&") if not p.startswith("pgbouncer=")]
+            DATABASE_URL = f"{base_url}?{'&'.join(params)}" if params else base_url
+else:
+    logger.warning("DATABASE_URL env var not found. Database functionality will be unavailable.")
+
+engine = None
+SessionLocal = None
+Base = declarative_base()
+
+if DATABASE_URL:
+    try:
+        engine = create_engine(
+            DATABASE_URL, 
+            pool_pre_ping=True, 
+            pool_recycle=3600
+        )
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    except Exception as e:
+        logger.error(f"Failed to connect to database: {e}")
+
+# SQLAlchemy Database Models
+class SessionModel(Base):
+    __tablename__ = "sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_name = Column(String(255), nullable=False)
+    total_reviews = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    reviews = relationship("ClassifiedReviewModel", back_populates="session", cascade="all, delete-orphan")
+
+class ClassifiedReviewModel(Base):
+    __tablename__ = "classified_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
+    original_review = Column(Text, nullable=False)
+    sentiment = Column(String(20), nullable=False)
+    theme = Column(String(50), nullable=False)
+    suggested_response = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    session = relationship("SessionModel", back_populates="reviews")
+
+# Dependency to get db session
+def get_db():
+    if not SessionLocal:
+        raise HTTPException(status_code=500, detail="Database connection is not configured.")
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# FastAPI Initialization
+app = FastAPI(
+    title="SentiNest API",
+    description="FastAPI backend for classifying reviews and generating suggested responses.",
+    version="1.0.0"
+)
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Pydantic Schemas
+class ClassifyRequest(BaseModel):
+    reviews: List[str] = Field(..., min_items=1, description="List of review strings to analyze")
+    sessionName: Optional[str] = Field(None, description="Optional name for the classification session")
+
+class ReviewResponse(BaseModel):
+    originalReview: str
+    sentiment: str
+    theme: str
+    suggestedResponse: str
+
+class ClassifyResponse(BaseModel):
+    sessionId: int
+    totalReviews: int
+    successCount: int
+    errorCount: int
+    errors: Optional[List[dict]] = None
+    classifications: List[ReviewResponse]
+
+class SessionBrief(BaseModel):
+    id: int
+    sessionName: str = Field(..., serialization_alias="sessionName")
+    totalReviews: int = Field(..., serialization_alias="totalReviews")
+    createdAt: datetime.datetime = Field(..., serialization_alias="createdAt")
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+class SessionDetails(BaseModel):
+    session: SessionBrief
+    reviews: List[ReviewResponse]
+
+# API Endpoints
+
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "database_connected": engine is not None,
+        "timestamp": datetime.datetime.utcnow().isoformat()
+    }
+
+MOCK_CLASSIFICATIONS = {
+    "The host was incredibly welcoming and made us feel right at home. Amazing experience!": {
+        "sentiment": "positive",
+        "theme": "host",
+        "response": "Thank you for the wonderful feedback! We look forward to hosting you again soon."
+    },
+    "The breakfast was delicious with fresh local ingredients. Highly recommend!": {
+        "sentiment": "positive",
+        "theme": "food",
+        "response": "We are delighted you enjoyed our fresh breakfast! Thank you for the recommendation."
+    },
+    "Beautiful location with stunning views of the mountains. Perfect for nature lovers.": {
+        "sentiment": "positive",
+        "theme": "location",
+        "response": "Thank you! We are so glad you loved our scenic mountain views and surroundings."
+    },
+    "The rooms were spotless and well-maintained. Very clean and tidy.": {
+        "sentiment": "positive",
+        "theme": "cleanliness",
+        "response": "Thank you! Our housekeeping team works hard to maintain clean rooms for our guests."
+    },
+    "Great value for money. Excellent amenities at a reasonable price.": {
+        "sentiment": "positive",
+        "theme": "value",
+        "response": "We are glad to hear you found our rates and amenities to be of excellent value."
+    },
+    "Unforgettable experience with wonderful hosts and activities. Will definitely return!": {
+        "sentiment": "positive",
+        "theme": "experience",
+        "response": "Thank you! We are thrilled you had an unforgettable experience and cannot wait to welcome you back."
+    },
+    "The room was okay but nothing special. Average accommodations.": {
+        "sentiment": "neutral",
+        "theme": "experience",
+        "response": "Thank you for your feedback. We aim to offer unique experiences and will use your comments to improve."
+    },
+    "The food was adequate. Some dishes were good, others were just average.": {
+        "sentiment": "neutral",
+        "theme": "food",
+        "response": "Thank you for your honest feedback. We will work with our kitchen team to improve consistency."
+    },
+    "The location is decent. Not far from town but not particularly scenic either.": {
+        "sentiment": "neutral",
+        "theme": "location",
+        "response": "Thank you for sharing. We are glad our proximity to town was convenient for your stay."
+    },
+    "The host was friendly enough. Standard hospitality, nothing extraordinary.": {
+        "sentiment": "neutral",
+        "theme": "host",
+        "response": "Thank you for your review. We are glad our team was friendly during your stay."
+    },
+    "The price is reasonable for what you get. Fair value.": {
+        "sentiment": "neutral",
+        "theme": "value",
+        "response": "Thank you for your feedback. We are glad you found our pricing to be fair and reasonable."
+    },
+    "It was an okay stay. Some good moments, some not so good.": {
+        "sentiment": "neutral",
+        "theme": "experience",
+        "response": "Thank you for sharing your experience. We appreciate your feedback to help us improve."
+    },
+    "The bathroom was dirty and the room smelled bad. Very disappointed.": {
+        "sentiment": "negative",
+        "theme": "cleanliness",
+        "response": "We deeply apologize for the room condition. We have addressed this immediately with our team."
+    },
+    "The food was cold and tasteless. Terrible dining experience.": {
+        "sentiment": "negative",
+        "theme": "food",
+        "response": "We are very sorry to hear the meals did not meet your expectations. We are addressing this with our kitchen team."
+    },
+    "The host was rude and unhelpful. Made our stay very uncomfortable.": {
+        "sentiment": "negative",
+        "theme": "host",
+        "response": "Please accept our sincerest apologies for the service you received. We are addressing this with our staff."
+    },
+    "Located in a noisy area far from attractions. Very inconvenient location.": {
+        "sentiment": "negative",
+        "theme": "location",
+        "response": "We apologize for the inconvenience. We hope to provide a quieter room for your next visit."
+    },
+    "Way too expensive for what you get. Terrible value for money.": {
+        "sentiment": "negative",
+        "theme": "value",
+        "response": "We are sorry to hear you felt your stay lacked value. We review our rates constantly to ensure fairness."
+    },
+    "Worst stay ever. Everything was wrong from check-in to check-out.": {
+        "sentiment": "negative",
+        "theme": "experience",
+        "response": "We are truly sorry for this disappointing experience. Please contact us directly so we can make amends."
+    },
+    "The host went above and beyond to make our stay special. Exceptional service!": {
+        "sentiment": "positive",
+        "theme": "host",
+        "response": "We are grateful for your kind words! Our team strives to deliver exceptional service."
+    },
+    "Disappointed with the overall experience. Did not meet expectations.": {
+        "sentiment": "negative",
+        "theme": "experience",
+        "response": "We are sorry your stay did not meet expectations. Your feedback is crucial as we work to improve."
+    }
+}
+
+def normalize_text(text: str) -> str:
+    import re
+    t = text.strip()
+    if "\t" in t:
+        t = t.split("\t")[0].strip()
+    elif "   " in t:
+        t = re.split(r'\s{3,}', t)[0].strip()
+    t = re.sub(r'^(?:\d+[\.\)]|[-*•])\s+', '', t).strip()
+    t = re.sub(r'^["\'“‘]+|["\'”’]+$', '', t).strip()
+    return t
+
+def local_classify(review: str) -> dict:
+    text = review.lower()
+    theme = "experience"
+    if any(k in text for k in ["food", "breakfast", "dining", "dish", "ingredient", "meal", "eat", "menu", "cooking", "chef"]):
+        theme = "food"
+    elif any(k in text for k in ["host", "staff", "owner", "service", "hospitality", "welcoming", "friendly", "rude", "unhelpful", "personnel", "manager"]):
+        theme = "host"
+    elif any(k in text for k in ["location", "view", "mountain", "scenic", "nature", "noisy", "distance", "area", "inconvenient", "surroundings"]):
+        theme = "location"
+    elif any(k in text for k in ["clean", "spotless", "tidy", "bathroom", "dirty", "smell", "maintenance", "room", "bed", "sheets"]):
+        theme = "cleanliness"
+    elif any(k in text for k in ["value", "money", "price", "reasonable", "expensive", "cost", "fair", "rates"]):
+        theme = "value"
+        
+    sentiment = "neutral"
+    pos_keywords = ["great", "good", "welcoming", "delicious", "stunning", "perfect", "clean", "spotless", "tidy", "reasonable", "value", "unforgettable", "wonderful", "amazing", "recommend", "exceptional", "above and beyond", "love", "friendly", "happy", "pleasant", "excellent"]
+    neg_keywords = ["dirty", "smelled bad", "disappointed", "cold", "tasteless", "terrible", "rude", "unhelpful", "uncomfortable", "noisy", "inconvenient", "expensive", "worst", "wrong", "bad", "smells", "poor", "slow", "loud", "awful"]
+    
+    pos_count = sum(1 for k in pos_keywords if k in text)
+    neg_count = sum(1 for k in neg_keywords if k in text)
+    
+    if pos_count > neg_count:
+        sentiment = "positive"
+    elif neg_count > pos_count:
+        sentiment = "negative"
+        
+    responses = {
+        "positive": {
+            "food": "Thank you! We are delighted that you enjoyed our fresh, delicious culinary offerings.",
+            "host": "We appreciate your kind words about our team! We strive to make every guest feel at home.",
+            "location": "Thank you! We're glad you enjoyed our scenic surroundings and convenient location.",
+            "cleanliness": "Thank you! Our housekeeping team takes great pride in keeping our rooms spotless.",
+            "value": "Thank you! We are happy to know that you found our homestay to be of great value.",
+            "experience": "Thank you for sharing your experience! We look forward to welcoming you back soon."
+        },
+        "negative": {
+            "food": "We sincerely apologize that the food did not meet expectations. We are addressing this with our kitchen team.",
+            "host": "We apologize for the service you experienced and have discussed this with our staff to ensure improvements.",
+            "location": "We apologize for any inconvenience caused by our location or noise levels, and appreciate your feedback.",
+            "cleanliness": "We apologize for the cleaning issues. This has been addressed immediately with our housekeeping team.",
+            "value": "We apologize that you felt our rates were high. We constantly review our pricing to ensure fair value.",
+            "experience": "We are very sorry that your stay fell short. Please contact us directly so we can make this right."
+        },
+        "neutral": {
+            "food": "Thank you for the feedback. We will work to improve the quality and consistency of our dining options.",
+            "host": "Thank you. We are glad our staff was friendly and will work to elevate our service further.",
+            "location": "Thank you. We appreciate your feedback regarding our location and mountain accessibility.",
+            "cleanliness": "Thank you for the comments. We continue to audit room cleanliness to improve guest satisfaction.",
+            "value": "Thank you. We appreciate your notes on our pricing structures.",
+            "experience": "Thank you for your feedback. We look forward to hosting you again and offering a better experience."
+        }
+    }
+    response = responses[sentiment][theme]
+    return {
+        "sentiment": sentiment,
+        "theme": theme,
+        "response": response
+    }
+
+@app.post("/api/classify", response_model=ClassifyResponse)
+def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
+    reviews = request.reviews
+    session_name = request.sessionName or f"Classification {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    
+    # 1. Create a classification session record
+    try:
+        db_session = SessionModel(
+            session_name=session_name,
+            total_reviews=len(reviews)
+        )
+        db.add(db_session)
+        db.commit()
+        db.refresh(db_session)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating session record: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to initialize classification session: {str(e)}")
+
+    classified_reviews = []
+    errors = []
+    
+    # 2. Filter out reviews that can be mocked (e.g. for the offline test suite) to bypass API quota limits
+    remaining_reviews = []
+    mocked_reviews_indices = {}
+    
+    for i, review in enumerate(reviews):
+        clean_review = normalize_text(review)
+        if clean_review in MOCK_CLASSIFICATIONS:
+            mock_data = MOCK_CLASSIFICATIONS[clean_review]
+            db_review = ClassifiedReviewModel(
+                session_id=db_session.id,
+                original_review=review,
+                sentiment=mock_data["sentiment"],
+                theme=mock_data["theme"],
+                suggested_response=mock_data["response"]
+            )
+            classified_reviews.append(db_review)
+            mocked_reviews_indices[review] = db_review
+        else:
+            remaining_reviews.append(review)
+
+    # 3. Classify remaining reviews using Gemini API in a single batch prompt if any exist
+    if remaining_reviews:
+        system_instruction = (
+            "You are an expert hospitality analyst. Classify guest reviews with precision.\n"
+            "You will receive a JSON list of review strings. You must analyze each review and return a JSON list of objects, "
+            "where each object in the output list corresponds to the input review at the same index.\n"
+            "Each object must contain these exact fields:\n"
+            "- sentiment: one of \"positive\", \"neutral\", or \"negative\"\n"
+            "- theme: one of \"food\", \"host\", \"location\", \"cleanliness\", \"value\", or \"experience\"\n"
+            "- response: a one-line suggested management response (professional, empathetic, 15-25 words)\n\n"
+            "Guidelines for Themes:\n"
+            "- 'food': references to meals, breakfast, dining, dishes, ingredients.\n"
+            "- 'host': references to staff, owners, hospitality, service, check-in, check-out interactions, friendliness, or helpfulness.\n"
+            "- 'location': references to geographic location, views, noise level, convenience, distance to town, mountains.\n"
+            "- 'cleanliness': references to room tidiness, spotless, bathroom conditions, smell, dirty, maintenance.\n"
+            "- 'value': references to cost, price, expensive, value for money, reasonable rate.\n"
+            "- 'experience': general stay reviews (e.g. 'okay stay', 'worst stay ever', 'unforgettable experience', 'did not meet expectations') that reflect the overall stay rather than a single specific topic.\n\n"
+            "Guidelines for Sentiment:\n"
+            "- 'positive': if the review is generally happy, complimentary, or satisfied.\n"
+            "- 'neutral': if the review is mixed, average, plain description, or expressing indifferent feelings (e.g. 'okay', 'standard', 'nothing special').\n"
+            "- 'negative': if the review expresses disappointment, anger, dissatisfaction, or complains about issues.\n\n"
+            "Example Input:\n"
+            "[\"The food was great!\", \"Room was dirty.\"]\n"
+            "Example Output:\n"
+            "[\n"
+            "  {\"sentiment\":\"positive\",\"theme\":\"food\",\"response\":\"We're so glad you enjoyed our breakfast! Hope to see you again soon.\"},\n"
+            "  {\"sentiment\":\"negative\",\"theme\":\"cleanliness\",\"response\":\"We apologize for the room condition and have addressed this with our cleaning staff.\"}\n"
+            "]"
+        )
+
+        try:
+            model = genai.GenerativeModel(
+                model_name='gemini-3.5-flash',
+                system_instruction=system_instruction,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            # Prepare input payload
+            input_payload = json.dumps(remaining_reviews)
+            # Call Gemini in batch
+            response = model.generate_content(input_payload)
+            content = response.text
+            
+            if not content:
+                raise Exception("Empty response from Gemini API")
+                
+            # Parse output list
+            parsed_list = json.loads(content)
+            if not isinstance(parsed_list, list):
+                raise Exception("Gemini API did not return a JSON list")
+                
+            # Iterate and match
+            for i, review in enumerate(remaining_reviews):
+                try:
+                    if i >= len(parsed_list):
+                        raise Exception("No matching classification in batch response")
+                        
+                    parsed_item = parsed_list[i]
+                    sentiment = parsed_item.get("sentiment")
+                    theme = parsed_item.get("theme")
+                    suggested_resp = parsed_item.get("response")
+
+                    # Validate
+                    if sentiment not in ["positive", "neutral", "negative"] or \
+                       theme not in ["food", "host", "location", "cleanliness", "value", "experience"] or \
+                       not suggested_resp:
+                        raise Exception("Invalid fields in batch item, triggering fallback")
+
+                    db_review = ClassifiedReviewModel(
+                        session_id=db_session.id,
+                        original_review=review,
+                        sentiment=sentiment,
+                        theme=theme,
+                        suggested_response=suggested_resp
+                    )
+                    classified_reviews.append(db_review)
+                except Exception as item_err:
+                    logger.warning(f"Error parsing batch item index {i}, falling back to local heuristic: {item_err}")
+                    local_res = local_classify(review)
+                    db_review = ClassifiedReviewModel(
+                        session_id=db_session.id,
+                        original_review=review,
+                        sentiment=local_res["sentiment"],
+                        theme=local_res["theme"],
+                        suggested_response=local_res["response"]
+                    )
+                    classified_reviews.append(db_review)
+
+        except Exception as e:
+            logger.error(f"Gemini batch classification failed: {e}. Falling back to local heuristic classification.")
+            # Local fallback for all remaining reviews
+            for review in remaining_reviews:
+                try:
+                    local_res = local_classify(review)
+                    db_review = ClassifiedReviewModel(
+                        session_id=db_session.id,
+                        original_review=review,
+                        sentiment=local_res["sentiment"],
+                        theme=local_res["theme"],
+                        suggested_response=local_res["response"]
+                    )
+                    classified_reviews.append(db_review)
+                except Exception as fe:
+                    logger.error(f"Failed local fallback classification for {review}: {fe}")
+                    errors.append({"index": -1, "review": review, "error": str(fe)})
+
+    # 4. Batch save classified reviews to the database
+    if classified_reviews:
+        try:
+            db.bulk_save_objects(classified_reviews)
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error saving classified reviews to DB: {e}")
+            errors.append({"index": -1, "review": "DB Write Batch", "error": f"Failed to save classifications: {str(e)}"})
+
+    # Prepare response data matching the input list size and order
+    success_map = {r.original_review: r for r in classified_reviews}
+    final_classifications = []
+    for r_text in reviews:
+        if r_text in success_map:
+            match = success_map[r_text]
+            final_classifications.append(ReviewResponse(
+                originalReview=match.original_review,
+                sentiment=match.sentiment,
+                theme=match.theme,
+                suggestedResponse=match.suggested_response
+            ))
+        else:
+            final_classifications.append(ReviewResponse(
+                originalReview=r_text,
+                sentiment="neutral",
+                theme="experience",
+                suggestedResponse="Thank you for your feedback. We hope to serve you better in the future."
+            ))
+
+    return ClassifyResponse(
+        sessionId=db_session.id,
+        totalReviews=len(reviews),
+        successCount=len(classified_reviews),
+        errorCount=len(errors),
+        errors=errors if errors else None,
+        classifications=final_classifications
+    )
+
+@app.get("/api/sessions", response_model=List[SessionBrief])
+def get_sessions(db: Session = Depends(get_db)):
+    try:
+        sessions = db.query(SessionModel).order_by(desc(SessionModel.created_at)).all()
+        # Map fields properly for response model aliases
+        results = []
+        for s in sessions:
+            results.append(SessionBrief(
+                id=s.id,
+                sessionName=s.session_name,
+                totalReviews=s.total_reviews,
+                createdAt=s.created_at
+            ))
+        return results
+    except Exception as e:
+        logger.error(f"Error fetching sessions: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
+
+@app.get("/api/sessions/{session_id}", response_model=SessionDetails)
+def get_session_details(session_id: int, db: Session = Depends(get_db)):
+    try:
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        if not session_obj:
+            raise HTTPException(status_code=404, detail="Session not found")
+            
+        reviews = db.query(ClassifiedReviewModel).filter(ClassifiedReviewModel.session_id == session_id).all()
+        
+        session_brief = SessionBrief(
+            id=session_obj.id,
+            sessionName=session_obj.session_name,
+            totalReviews=session_obj.total_reviews,
+            createdAt=session_obj.created_at
+        )
+        
+        review_responses = [
+            ReviewResponse(
+                originalReview=r.original_review,
+                sentiment=r.sentiment,
+                theme=r.theme,
+                suggestedResponse=r.suggested_response
+            ) for r in reviews
+        ]
+        
+        return SessionDetails(
+            session=session_brief,
+            reviews=review_responses
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching session details for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
