@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <!-- Grayscale Background -->
+  <rect width="100%" height="100%" fill="#f8fafc" />
+  
+  <!-- WIREFRAME NAVBAR -->
+  <rect x="0" y="0" width="1440" height="70" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="60" y="15" width="40" height="40" rx="8" fill="#e2e8f0" stroke="#94a3b8" />
+  <text x="73" y="40" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#475569">[L]</text>
+  <text x="120" y="38" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">SentiNest [Branding]</text>
+  <text x="120" y="52" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#64748b">[Trishul Homestays]</text>
+  
+  <!-- Navbar links -->
+  <text x="480" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Home]</text>
+  <text x="580" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Classifier]</text>
+  <text x="720" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: About]</text>
+  <text x="840" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Dashboard]</text>
+  <text x="1000" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Login]</text>
+  
+  <rect x="1240" y="18" width="140" height="34" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="1275" y="39" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#475569">[Staff Portal]</text>
+  
+  <!-- HERO SECTION -->
+  <rect x="100" y="120" width="1240" height="340" rx="24" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <!-- Crossed diagonals for visual hero placeholder image -->
+  <line x1="100" y1="120" x2="1340" y2="460" stroke="#cbd5e1" stroke-dasharray="8 8" />
+  <line x1="1340" y1="120" x2="100" y2="460" stroke="#cbd5e1" stroke-dasharray="8 8" />
+  
+  <rect x="250" y="160" width="940" height="260" rx="16" fill="#f1f5f9" fill-opacity="0.95" stroke="#94a3b8" />
+  <text x="720" y="220" text-anchor="middle" font-family="system-ui, sans-serif" font-size="36" font-weight="900" fill="#334155">[Hero Main Header - Title Placeholder]</text>
+  <text x="720" y="270" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="normal" fill="#475569">[Subtitle describing review sentiments classification features and reply drafts]</text>
+  <rect x="560" y="320" width="320" height="48" rx="12" fill="#334155" stroke="#1e293b" />
+  <text x="720" y="350" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#ffffff">[Call To Action Button Placeholder]</text>
+  
+  <!-- THREE CARDS GRID -->
+  <!-- Card 1 -->
+  <rect x="100" y="500" width="380" height="220" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="130" y="530" width="44" height="44" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <line x1="130" y1="530" x2="174" y2="574" stroke="#cbd5e1" />
+  <line x1="174" y1="530" x2="130" y2="574" stroke="#cbd5e1" />
+  <text x="130" y="605" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">[Card 1 Header]</text>
+  <text x="130" y="635" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[Placeholder text for feature card details]</text>
+  <text x="130" y="655" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[explaining sentiment categories mapping]</text>
+  
+  <!-- Card 2 -->
+  <rect x="530" y="500" width="380" height="220" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="560" y="530" width="44" height="44" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <line x1="560" y1="530" x2="604" y2="574" stroke="#cbd5e1" />
+  <line x1="604" y1="530" x2="560" y2="574" stroke="#cbd5e1" />
+  <text x="560" y="605" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">[Card 2 Header]</text>
+  <text x="560" y="635" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[Placeholder text for feature card details]</text>
+  <text x="560" y="655" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[explaining batch classifier functions]</text>
+  
+  <!-- Card 3 -->
+  <rect x="960" y="500" width="380" height="220" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="990" y="530" width="44" height="44" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <line x1="990" y1="530" x2="1034" y2="574" stroke="#cbd5e1" />
+  <line x1="1034" y1="530" x2="990" y2="574" stroke="#cbd5e1" />
+  <text x="990" y="605" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">[Card 3 Header]</text>
+  <text x="990" y="635" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[Placeholder text for feature card details]</text>
+  <text x="990" y="655" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">[explaining review dashboard reports]</text>
+  
+  <!-- WIREFRAME FOOTER -->
+  <rect x="0" y="820" width="1440" height="80" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="100" y="865" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">SentiNest [Footer Logo Placeholder]</text>
+  <text x="640" y="865" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b">[Links: Home - Classifier - About - Settings]</text>
+  <text x="1140" y="865" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">© [2026] Trishul Eco-Homestays SentiNest</text>
+</svg>

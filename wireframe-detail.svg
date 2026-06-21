@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <!-- Grayscale Background -->
+  <rect width="100%" height="100%" fill="#f8fafc" />
+  
+  <!-- WIREFRAME NAVBAR -->
+  <rect x="0" y="0" width="1440" height="70" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="60" y="15" width="40" height="40" rx="8" fill="#e2e8f0" stroke="#94a3b8" />
+  <text x="73" y="40" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#475569">[L]</text>
+  <text x="120" y="38" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">SentiNest [Branding]</text>
+  <text x="120" y="52" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#64748b">[Trishul Homestays]</text>
+  
+  <!-- Navbar links -->
+  <text x="480" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Home]</text>
+  <text x="580" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Classifier]</text>
+  <text x="720" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: About]</text>
+  <text x="840" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Dashboard]</text>
+  <text x="1000" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Login]</text>
+  
+  <rect x="1240" y="18" width="140" height="34" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="1275" y="39" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#475569">[Staff Portal]</text>
+  
+  <!-- PAGE TITLE -->
+  <text x="100" y="130" font-family="system-ui, sans-serif" font-size="28" font-weight="900" fill="#334155">Session Log History [Detail Screen]</text>
+  <text x="100" y="155" font-family="system-ui, sans-serif" font-size="14" fill="#64748b">[Audit session list detailing review entries, classifications, and metadata results]</text>
+
+  <!-- SEARCH/FILTER BAR -->
+  <rect x="100" y="190" width="1240" height="60" rx="12" fill="#ffffff" stroke="#cbd5e1" />
+  <text x="130" y="225" font-family="system-ui, sans-serif" font-size="13" font-style="italic" fill="#94a3b8">[Input field: Search audit sessions placeholder...]</text>
+  <rect x="1100" y="202" width="210" height="36" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="1140" y="224" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#475569">[Filter Options Dropdown]</text>
+
+  <!-- LOGS DETAIL GRID TABLE -->
+  <rect x="100" y="270" width="1240" height="510" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  
+  <!-- Table Header -->
+  <rect x="100" y="270" width="1240" height="50" rx="16" fill="#cbd5e1" />
+  <!-- header row backgrounds overlay -->
+  <rect x="100" y="270" width="1240" height="50" fill="#cbd5e1" />
+  <text x="140" y="302" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Column: Session Name]</text>
+  <text x="440" y="302" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Column: Timestamp]</text>
+  <text x="740" y="302" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Column: Total Reviews]</text>
+  <text x="1040" y="302" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Column: Audit Actions]</text>
+  
+  <!-- Table Row 1 -->
+  <line x1="100" y1="380" x2="1340" y2="380" stroke="#cbd5e1" />
+  <text x="140" y="352" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">[Session #1 Placeholder Title String]</text>
+  <text x="440" y="352" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[2026-06-21 12:45:00]</text>
+  <text x="740" y="352" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[20 reviews classified]</text>
+  <text x="1040" y="352" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Inspect Details Link]</text>
+  
+  <!-- Table Row 2 -->
+  <line x1="100" y1="440" x2="1340" y2="440" stroke="#cbd5e1" />
+  <text x="140" y="412" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">[Session #2 Placeholder Title String]</text>
+  <text x="440" y="412" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[2026-06-20 18:30:00]</text>
+  <text x="740" y="412" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[12 reviews classified]</text>
+  <text x="1040" y="412" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Inspect Details Link]</text>
+
+  <!-- Table Row 3 -->
+  <line x1="100" y1="500" x2="1340" y2="500" stroke="#cbd5e1" />
+  <text x="140" y="472" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">[Session #3 Placeholder Title String]</text>
+  <text x="440" y="472" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[2026-06-19 10:15:00]</text>
+  <text x="740" y="472" font-family="system-ui, sans-serif" font-size="13" fill="#64748b">[5 reviews classified]</text>
+  <text x="1040" y="472" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#334155">[Inspect Details Link]</text>
+  
+  <!-- Crossed diagonals representing loading detail panels visual placeholder -->
+  <rect x="140" y="520" width="1160" height="230" rx="12" fill="#f1f5f9" stroke="#cbd5e1" stroke-dasharray="6 6" />
+  <text x="720" y="640" text-anchor="middle" font-family="system-ui, sans-serif" font-size="16" font-weight="bold" fill="#64748b">[Expanded Sub-Table Detail Log Viewport - Grayscale Row Preview]</text>
+  <text x="720" y="670" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#94a3b8">[Renders detailed review comments, sentiment classifications, and AI drafted replies]</text>
+
+  <!-- WIREFRAME FOOTER -->
+  <rect x="0" y="820" width="1440" height="80" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="100" y="865" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">SentiNest [Footer Logo Placeholder]</text>
+  <text x="640" y="865" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b">[Links: Home - Classifier - About - Settings]</text>
+  <text x="1140" y="865" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">© [2026] Trishul Eco-Homestays SentiNest</text>
+</svg>

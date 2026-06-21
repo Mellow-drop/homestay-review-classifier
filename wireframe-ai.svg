@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <!-- Grayscale Background -->
+  <rect width="100%" height="100%" fill="#f8fafc" />
+  
+  <!-- WIREFRAME NAVBAR -->
+  <rect x="0" y="0" width="1440" height="70" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="60" y="15" width="40" height="40" rx="8" fill="#e2e8f0" stroke="#94a3b8" />
+  <text x="73" y="40" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#475569">[L]</text>
+  <text x="120" y="38" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">SentiNest [Branding]</text>
+  <text x="120" y="52" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#64748b">[Trishul Homestays]</text>
+  
+  <!-- Navbar links -->
+  <text x="480" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Home]</text>
+  <text x="580" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#334155">[Link: Classifier]</text>
+  <text x="720" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: About]</text>
+  <text x="840" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Dashboard]</text>
+  <text x="1000" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Login]</text>
+  
+  <rect x="1240" y="18" width="140" height="34" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="1275" y="39" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#475569">[Staff Portal]</text>
+  
+  <!-- PAGE TITLE -->
+  <text x="100" y="130" font-family="system-ui, sans-serif" font-size="28" font-weight="900" fill="#334155">Review Sentiment Classifier [AI Feature Screen]</text>
+  <text x="100" y="155" font-family="system-ui, sans-serif" font-size="14" fill="#64748b">[Paste guest reviews below. The LLM will identify sentiment tone, extract operations tags, and draft response suggestions]</text>
+ 
+  <!-- AI WORKSPACE PANELS -->
+  <!-- Left Side: Input Panel -->
+  <rect x="100" y="195" width="480" height="570" rx="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <text x="130" y="240" font-family="system-ui, sans-serif" font-size="16" font-weight="extrabold" fill="#334155">[New Classification Audit Run]</text>
+  
+  <!-- Form input 1: session name -->
+  <text x="130" y="278" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[AUDIT SESSION TITLE INPUT]</text>
+  <rect x="130" y="290" width="420" height="40" rx="10" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="150" y="315" font-family="system-ui, sans-serif" font-size="12" font-style="italic" fill="#94a3b8">[Input: e.g. June 2026 Audit Run]</text>
+ 
+  <!-- Form input 2: reviews text area -->
+  <text x="130" y="360" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[GUEST REVIEWS (ONE REVIEW PER LINE)]</text>
+  <rect x="130" y="375" width="420" height="180" rx="12" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="150" y="405" font-family="system-ui, sans-serif" font-size="12" font-style="italic" fill="#94a3b8">[Textarea review inputs placeholder...]</text>
+ 
+  <!-- Quick templates -->
+  <text x="130" y="585" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#94a3b8">[QUICK SELECT PRESET REVIEW PROMPTS]</text>
+  <rect x="130" y="600" width="120" height="30" rx="6" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="190" y="618" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#475569">[Preset 1]</text>
+  <rect x="260" y="600" width="120" height="30" rx="6" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="320" y="618" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#475569">[Preset 2]</text>
+  <rect x="390" y="600" width="120" height="30" rx="6" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="450" y="618" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#475569">[Preset 3]</text>
+ 
+  <!-- Submit buttons -->
+  <rect x="130" y="670" width="420" height="48" rx="12" fill="#334155" stroke="#1e293b" />
+  <text x="340" y="699" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#ffffff">[Button: Classify Reviews via Gemini LLM]</text>
+ 
+  <!-- Right Side: Classification Outputs Table -->
+  <rect x="610" y="195" width="730" height="570" rx="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
+  <text x="640" y="240" font-family="system-ui, sans-serif" font-size="16" font-weight="extrabold" fill="#334155">[Model Classification Output Matrix]</text>
+  
+  <!-- Output table header -->
+  <rect x="640" y="270" width="670" height="40" fill="#e2e8f0" rx="8" />
+  <text x="655" y="294" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[Review text]</text>
+  <text x="920" y="294" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[Sentiment]</text>
+  <text x="1030" y="294" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[Theme Tag]</text>
+  <text x="1140" y="294" font-family="system-ui, sans-serif" font-size="11" font-weight="bold" fill="#475569">[Suggested Reply]</text>
+  
+  <!-- Output Row 1 -->
+  <line x1="640" y1="380" x2="1310" y2="380" stroke="#e2e8f0" />
+  <text x="655" y="340" font-family="system-ui, sans-serif" font-size="12" fill="#334155">"[Review #1 text placeholder]"</text>
+  <!-- Sentiment badge -->
+  <rect x="920" y="325" width="80" height="24" rx="12" fill="#cbd5e1" />
+  <text x="960" y="341" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#334155">[Positive]</text>
+  <!-- Theme badge -->
+  <rect x="1030" y="325" width="80" height="24" rx="6" fill="#e2e8f0" />
+  <text x="1070" y="341" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#475569">[host]</text>
+  <text x="1140" y="340" font-family="system-ui, sans-serif" font-size="11" font-style="italic" fill="#64748b">"[AI suggested reply draft...]"</text>
+ 
+  <!-- Output Row 2 -->
+  <line x1="640" y1="450" x2="1310" y2="450" stroke="#e2e8f0" />
+  <text x="655" y="410" font-family="system-ui, sans-serif" font-size="12" fill="#334155">"[Review #2 text placeholder]"</text>
+  <!-- Sentiment badge -->
+  <rect x="920" y="395" width="80" height="24" rx="12" fill="#cbd5e1" />
+  <text x="960" y="411" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#334155">[Negative]</text>
+  <!-- Theme badge -->
+  <rect x="1030" y="395" width="80" height="24" rx="6" fill="#e2e8f0" />
+  <text x="1070" y="411" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" font-weight="bold" fill="#475569">[cleanliness]</text>
+  <text x="1140" y="410" font-family="system-ui, sans-serif" font-size="11" font-style="italic" fill="#64748b">"[AI suggested reply draft...]"</text>
+
+  <!-- Pipeline status box overlay representing loaders/processing -->
+  <rect x="640" y="490" width="670" height="240" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="4 4" />
+  <text x="975" y="600" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Grayscale Spinner & Pipeline Progress Status Loader Placeholder]</text>
+  <text x="975" y="625" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">[Renders detailed batch processing states during classification task execution]</text>
+
+  <!-- WIREFRAME FOOTER -->
+  <rect x="0" y="820" width="1440" height="80" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="100" y="865" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">SentiNest [Footer Logo Placeholder]</text>
+  <text x="640" y="865" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b">[Links: Home - Classifier - About - Settings]</text>
+  <text x="1140" y="865" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">© [2026] Trishul Eco-Homestays SentiNest</text>
+</svg>

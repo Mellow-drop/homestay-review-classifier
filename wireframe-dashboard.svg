@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <!-- Grayscale Background -->
+  <rect width="100%" height="100%" fill="#f8fafc" />
+  
+  <!-- WIREFRAME NAVBAR -->
+  <rect x="0" y="0" width="1440" height="70" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <rect x="60" y="15" width="40" height="40" rx="8" fill="#e2e8f0" stroke="#94a3b8" />
+  <text x="73" y="40" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#475569">[L]</text>
+  <text x="120" y="38" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#334155">SentiNest [Branding]</text>
+  <text x="120" y="52" font-family="system-ui, sans-serif" font-size="10" font-weight="semibold" fill="#64748b">[Trishul Homestays]</text>
+  
+  <!-- Navbar links -->
+  <text x="480" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Home]</text>
+  <text x="580" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Classifier]</text>
+  <text x="720" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: About]</text>
+  <text x="840" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#334155">[Link: Dashboard]</text>
+  <text x="1000" y="42" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#64748b">[Link: Login]</text>
+  
+  <rect x="1240" y="18" width="140" height="34" rx="8" fill="#e2e8f0" stroke="#cbd5e1" />
+  <text x="1275" y="39" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#475569">[Staff Portal]</text>
+  
+  <!-- PAGE TITLE -->
+  <text x="100" y="130" font-family="system-ui, sans-serif" font-size="28" font-weight="900" fill="#334155">Analytics Dashboard [Screen]</text>
+  <text x="100" y="155" font-family="system-ui, sans-serif" font-size="14" fill="#64748b">[Summary overview of guest reviews databases stats and accuracy rates]</text>
+
+  <!-- STATS GRID -->
+  <!-- Stats Card 1 -->
+  <rect x="100" y="190" width="380" height="130" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="130" y="230" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#94a3b8">[TOTAL REVIEWS CLASSIFIED]</text>
+  <text x="130" y="275" font-family="system-ui, sans-serif" font-size="32" font-weight="black" fill="#334155">[1,248]</text>
+  <text x="130" y="300" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">[+12% this week - change placeholder]</text>
+
+  <!-- Stats Card 2 -->
+  <rect x="530" y="190" width="380" height="130" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="560" y="230" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#94a3b8">[POSITIVE SENTIMENT RATIO]</text>
+  <text x="560" y="275" font-family="system-ui, sans-serif" font-size="32" font-weight="black" fill="#334155">[84.2%]</text>
+  <text x="560" y="300" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">[+2.4% vs last month - placeholder]</text>
+
+  <!-- Stats Card 3 -->
+  <rect x="960" y="190" width="380" height="130" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="990" y="230" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#94a3b8">[ACCURACY RUN RATIO]</text>
+  <text x="990" y="275" font-family="system-ui, sans-serif" font-size="32" font-weight="black" fill="#334155">[98.9%]</text>
+  <text x="990" y="300" font-family="system-ui, sans-serif" font-size="11" fill="#64748b">[Local fallback active - status]</text>
+
+  <!-- BIG CHART WIREFRAME BOX -->
+  <rect x="100" y="360" width="1240" height="420" rx="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <!-- Crossed diagonals inside chart container -->
+  <line x1="100" y1="360" x2="1340" y2="780" stroke="#e2e8f0" stroke-dasharray="10 10" />
+  <line x1="1340" y1="360" x2="100" y2="780" stroke="#e2e8f0" stroke-dasharray="10 10" />
+  
+  <rect x="140" y="400" width="1160" height="340" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="4 4" />
+  <text x="720" y="560" text-anchor="middle" font-family="system-ui, sans-serif" font-size="20" font-weight="bold" fill="#475569">[Chart Area Placeholder - Grayscale Sentiment Trends Line Graph]</text>
+  <text x="720" y="590" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">[Dimensions: 1160px x 340px - Represents review count logs sorted by dates]</text>
+
+  <!-- WIREFRAME FOOTER -->
+  <rect x="0" y="820" width="1440" height="80" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" />
+  <text x="100" y="865" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569">SentiNest [Footer Logo Placeholder]</text>
+  <text x="640" y="865" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#64748b">[Links: Home - Classifier - About - Settings]</text>
+  <text x="1140" y="865" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8">© [2026] Trishul Eco-Homestays SentiNest</text>
+</svg>
