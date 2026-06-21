@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Button, Loader } from "@/components/ui";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle, Sparkles, CheckSquare, Award, XCircle, BarChart3, Activity, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -223,14 +222,14 @@ export default function TestReport() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 gap-4 border-b border-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 gap-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
             <Award className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Classifier Verification Suite</h2>
-            <p className="text-sm text-slate-500 font-medium">
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Classifier Verification Suite</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
               Run local classification accuracy evaluations using a baseline set of 20 simulated eco-homestay reviews.
             </p>
           </div>
@@ -239,10 +238,10 @@ export default function TestReport() {
 
       {/* Action Card */}
       <Card className="glass-card border shadow-sm rounded-2xl overflow-hidden">
-        <CardContent className="py-5 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30">
+        <CardContent className="py-5 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30 dark:bg-slate-900/10">
           <div className="space-y-1">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">System Accuracy Evaluation</div>
-            <div className="text-sm font-semibold text-slate-700">
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">System Accuracy Evaluation</div>
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">
               Validate classifier performance against standard response sheet entries.
             </div>
           </div>
@@ -253,7 +252,7 @@ export default function TestReport() {
                   setTestResults([]);
                 }}
                 variant="ghost"
-                className="h-9 px-3.5 text-xs text-rose-600 hover:bg-rose-50 font-bold rounded-lg transition-colors duration-150"
+                className="h-9 px-3.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-bold rounded-lg transition-colors duration-150"
               >
                 Clear Results
               </Button>
@@ -261,9 +260,9 @@ export default function TestReport() {
             <Button
               onClick={handleRunTests}
               disabled={isRunning || classifyMutation.isPending}
-              className="h-10 px-5 bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98 flex items-center justify-center gap-2"
+              className="h-10 px-5 bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:hover:bg-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98 flex items-center justify-center gap-2"
             >
-              {isRunning && <Spinner className="h-3.5 w-3.5 text-white" />}
+              {isRunning && <Loader variant="spinner" size="sm" className="p-0 text-white dark:text-slate-950" />}
               {isRunning ? "Evaluating System..." : "Run Test Suite"}
             </Button>
           </div>
@@ -276,7 +275,7 @@ export default function TestReport() {
           <CardHeader className="pb-4 border-b border-slate-100/80">
             <div className="flex items-center gap-2">
               <CheckSquare className="h-5 w-5 text-indigo-500" />
-              <CardTitle className="text-lg font-bold text-slate-900">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                 Baseline Dataset Preview (20 Standard Reviews)
               </CardTitle>
             </div>
@@ -285,20 +284,20 @@ export default function TestReport() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="overflow-hidden rounded-xl border border-slate-150 shadow-sm bg-white">
+            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
               <div className="max-h-[420px] overflow-y-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                    <TableRow className="border-slate-200 hover:bg-transparent">
-                      <TableHead className="font-semibold text-slate-700 py-3.5 pl-6 min-w-[280px]">Review</TableHead>
-                      <TableHead className="font-semibold text-slate-700 py-3.5 w-48">Expected Sentiment</TableHead>
-                      <TableHead className="font-semibold text-slate-700 py-3.5 w-48 pr-6">Expected Theme</TableHead>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-950 sticky top-0 z-10 shadow-sm">
+                    <TableRow className="border-slate-200 dark:border-slate-800 hover:bg-transparent">
+                      <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 pl-6 min-w-[280px]">Review</TableHead>
+                      <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-48">Expected Sentiment</TableHead>
+                      <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-48 pr-6">Expected Theme</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {testReviews.map((item, index) => (
-                      <TableRow key={index} className="border-slate-100 hover:bg-slate-50/60 transition-colors duration-150">
-                        <TableCell className="text-sm font-medium text-slate-800 py-4 pl-6 pr-6 leading-relaxed whitespace-pre-wrap">
+                      <TableRow key={index} className="border-slate-100 dark:border-slate-800/40 hover:bg-slate-50/60 dark:hover:bg-slate-950/20 transition-colors duration-150">
+                        <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pl-6 pr-6 leading-relaxed whitespace-pre-wrap">
                           {item.review}
                         </TableCell>
                         <TableCell className="py-4">
@@ -307,7 +306,7 @@ export default function TestReport() {
                           </Badge>
                         </TableCell>
                         <TableCell className="py-4 pr-6">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200/40 shadow-sm">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
                             <span>{themeIcons[item.expectedTheme]}</span>
                             <span className="capitalize">{item.expectedTheme}</span>
                           </span>
@@ -335,7 +334,7 @@ export default function TestReport() {
                 </span>
               </div>
               <div className="space-y-1">
-                <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                   {sentimentAccuracy.toFixed(0)}%
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -355,7 +354,7 @@ export default function TestReport() {
                 </span>
               </div>
               <div className="space-y-1">
-                <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                   {themeAccuracy.toFixed(0)}%
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -375,7 +374,7 @@ export default function TestReport() {
                 </span>
               </div>
               <div className="space-y-1">
-                <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
+                <div className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                   {((testResults.filter((r) => r.sentimentMatch && r.themeMatch).length / testResults.length) * 100).toFixed(0)}%
                 </div>
                 <div className="text-xs text-slate-500 font-medium">
@@ -395,7 +394,7 @@ export default function TestReport() {
                 </span>
               </div>
               <div className="space-y-1">
-                <div className="text-xl font-extrabold text-slate-900 uppercase pt-2">
+                <div className="text-xl font-extrabold text-slate-900 dark:text-white uppercase pt-2">
                   {sentimentAccuracy >= 80 && themeAccuracy >= 80 ? (
                     <span className="text-emerald-600 font-black">Passed</span>
                   ) : (
@@ -414,29 +413,29 @@ export default function TestReport() {
       {/* Evaluation Matrix Card */}
       {testResults.length > 0 && (
         <Card className="glass-card border shadow-sm rounded-2xl">
-          <CardHeader className="pb-4 border-b border-slate-100/80">
+          <CardHeader className="pb-4 border-b border-slate-100/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-bold text-slate-900">
+              <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">
                 Evaluation Matrix ({testResults.length} test reviews)
               </CardTitle>
-              <Badge variant="outline" className="bg-slate-100 border-slate-200 text-slate-700 px-3 py-1 font-bold rounded-lg text-xs">
+              <Badge variant="outline" className="bg-slate-100/80 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1 font-bold rounded-lg text-xs">
                 Active Session Results
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="overflow-x-auto rounded-xl border border-slate-150 shadow-sm bg-white">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
               <Table>
-                <TableHeader className="bg-slate-50/50">
-                  <TableRow className="border-slate-200 hover:bg-transparent">
-                    <TableHead className="font-semibold text-slate-700 py-3.5 pl-6 min-w-[200px]">Review</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3.5 w-32">Expected Sentiment</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3.5 w-36">Actual Sentiment</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3.5 w-32">Expected Theme</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3.5 w-36">Actual Theme</TableHead>
-                    <TableHead className="font-semibold text-slate-700 py-3.5 min-w-[260px]">Suggested Reply</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-700 py-3.5 w-16">Copy</TableHead>
-                    <TableHead className="text-center font-semibold text-slate-700 py-3.5 w-20 pr-6">Match</TableHead>
+                <TableHeader className="bg-slate-50/50 dark:bg-slate-950/50">
+                  <TableRow className="border-slate-200 dark:border-slate-800 hover:bg-transparent">
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 pl-6 min-w-[200px]">Review</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-32">Expected Sentiment</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-36">Actual Sentiment</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-32">Expected Theme</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-36">Actual Theme</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-200 py-3.5 min-w-[260px]">Suggested Reply</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-16">Copy</TableHead>
+                    <TableHead className="text-center font-semibold text-slate-700 dark:text-slate-200 py-3.5 w-20 pr-6">Match</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -446,11 +445,11 @@ export default function TestReport() {
                     return (
                       <TableRow 
                         key={index} 
-                        className={`border-slate-100 hover:bg-slate-50/60 transition-colors duration-150 ${
-                          !result.sentimentMatch && !result.themeMatch ? 'bg-rose-50/10' : ''
+                        className={`border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/20 transition-colors duration-150 ${
+                          !result.sentimentMatch && !result.themeMatch ? 'bg-rose-50/10 dark:bg-rose-950/5' : ''
                         }`}
                       >
-                        <TableCell className="text-sm font-medium text-slate-800 py-4 pl-6 pr-6 leading-relaxed whitespace-pre-wrap">
+                        <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pl-6 pr-6 leading-relaxed whitespace-pre-wrap">
                           {result.review}
                         </TableCell>
                         <TableCell className="py-4">
@@ -468,33 +467,33 @@ export default function TestReport() {
                               {result.actualSentiment || "None"}
                             </Badge>
                             {!result.sentimentMatch && (
-                              <span className="inline-flex text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-100/80 px-1 rounded uppercase tracking-wider">
+                              <span className="inline-flex text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-100/80 dark:border-rose-900/30 px-1 rounded uppercase tracking-wider">
                                 Mismatch
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="py-4">
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200/40 shadow-sm">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
                             <span>{themeIcons[result.expectedTheme as keyof typeof themeIcons]}</span>
                             <span className="capitalize">{result.expectedTheme}</span>
                           </span>
                         </TableCell>
                         <TableCell className="py-4">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 border border-slate-200/40 shadow-sm">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
                               <span>{themeIcons[result.actualTheme as keyof typeof themeIcons] || "❓"}</span>
                               <span className="capitalize">{result.actualTheme || "None"}</span>
                             </span>
                             {!result.themeMatch && (
-                              <span className="inline-flex text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-100/80 px-1 rounded uppercase tracking-wider">
+                              <span className="inline-flex text-[9px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-100/80 dark:border-rose-900/30 px-1 rounded uppercase tracking-wider">
                                 Mismatch
                               </span>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600 leading-relaxed py-4 pr-6 italic whitespace-pre-wrap">
-                          {result.actualResponse ? `"${result.actualResponse}"` : <span className="text-slate-400">Not generated</span>}
+                        <TableCell className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed py-4 pr-6 italic whitespace-pre-wrap">
+                          {result.actualResponse ? `"${result.actualResponse}"` : <span className="text-slate-400 dark:text-slate-500">Not generated</span>}
                         </TableCell>
                         <TableCell className="text-center py-4">
                           {result.actualResponse ? (
@@ -502,7 +501,7 @@ export default function TestReport() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleCopyResponse(index, result.actualResponse || "")}
-                              className="h-8 w-8 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-950 transition-colors duration-150"
+                              className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-100 transition-colors duration-150"
                               title="Copy response"
                             >
                               {copiedIndex === index ? (
@@ -512,7 +511,7 @@ export default function TestReport() {
                               )}
                             </Button>
                           ) : (
-                            <span className="text-slate-350">-</span>
+                            <span className="text-slate-300">-</span>
                           )}
                         </TableCell>
                         <TableCell className="text-center py-4 pr-6">

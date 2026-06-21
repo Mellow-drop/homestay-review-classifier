@@ -10,7 +10,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar />
 
       <main className="flex-grow mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full">
@@ -42,7 +42,7 @@ export default function Dashboard() {
                   <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                     {stat.value}
                   </div>
-                  <div className="text-[11px] font-semibold text-slate-450 dark:text-slate-500">
+                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                     {stat.change}
                   </div>
                 </div>

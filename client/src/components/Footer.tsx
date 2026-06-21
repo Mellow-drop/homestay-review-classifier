@@ -53,7 +53,7 @@ export default function Footer() {
           </nav>
 
           {/* Copyright notice */}
-          <div className="text-center md:text-right text-xs text-slate-450 dark:text-slate-500">
+          <div className="text-center md:text-right text-xs text-slate-400 dark:text-slate-500">
             <p>© {currentYear} SentiNest. Trishul Eco-Homestays auditing utility.</p>
           </div>
         </div>

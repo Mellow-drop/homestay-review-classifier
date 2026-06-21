@@ -3,12 +3,21 @@ import { cn } from "@/lib/utils";
 import { useDialogComposition } from "@/components/ui/dialog";
 import { useComposition } from "@/hooks/useComposition";
 
+/**
+ * Props for the custom Input component.
+ * @property {string} [label] - Optional descriptive label rendered above the input field.
+ * @property {string} [error] - Optional validation error message rendered below the input field.
+ * @property {function} [onChange] - Optional change event handler.
+ */
 export interface InputProps extends Omit<React.ComponentProps<"input">, "onChange"> {
   label?: string;
   error?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
+/**
+ * Reusable form input component supporting labels, validation errors, and composition events.
+ */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, onKeyDown, onCompositionStart, onCompositionEnd, onChange, ...props }, ref) => {
     const dialogComposition = useDialogComposition();

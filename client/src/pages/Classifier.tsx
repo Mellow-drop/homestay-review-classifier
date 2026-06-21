@@ -1,15 +1,13 @@
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
+import { Button, Modal, Toast, Loader } from "@/components/ui";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Copy, Download, AlertCircle, CheckCircle2, History, ChevronUp, ChevronDown, ListFilter, ArrowLeft, TreePine } from "lucide-react";
-import { toast } from "sonner";
 import { Link } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -87,6 +85,7 @@ export default function Classifier() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const queryClient = useQueryClient();
@@ -113,14 +112,14 @@ export default function Classifier() {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
 
       if (data.errorCount > 0) {
-        toast.warning(`Classified ${data.successCount} reviews with ${data.errorCount} errors`);
+        Toast.warning(`Classified ${data.successCount} reviews with ${data.errorCount} errors`);
       } else {
-        toast.success(`Successfully classified ${data.successCount} reviews`);
+        Toast.success(`Successfully classified ${data.successCount} reviews`);
       }
     },
     onError: (error: any) => {
       const errMsg = error.response?.data?.detail || error.message || "An error occurred";
-      toast.error(`Classification failed: ${errMsg}`);
+      Toast.error(`Classification failed: ${errMsg}`);
       setIsProcessing(false);
       
       const updatedProgress = reviewProgress.map((item) => ({
@@ -139,7 +138,7 @@ export default function Classifier() {
       .filter((r) => r.length > 0);
 
     if (reviews.length === 0) {
-      toast.error("Please enter at least one review");
+      Toast.error("Please enter at least one review");
       return;
     }
 
@@ -170,14 +169,14 @@ export default function Classifier() {
   const handleCopyResponse = (index: number, response: string) => {
     navigator.clipboard.writeText(response);
     setCopiedIndex(index);
-    toast.success("Copied to clipboard");
+    Toast.success("Copied to clipboard");
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
     setReviewInput(preset.text);
     setSessionName(preset.session);
-    toast.info(`Filled with preset review: ${preset.label}`);
+    Toast.info(`Filled with preset review: ${preset.label}`);
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
@@ -185,7 +184,7 @@ export default function Classifier() {
 
   const handleExportCSV = () => {
     if (results.length === 0) {
-      toast.error("No results to export");
+      Toast.error("No results to export");
       return;
     }
 
@@ -207,7 +206,7 @@ export default function Classifier() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("CSV exported successfully");
+    Toast.success("CSV exported successfully");
   };
 
   const sortedResults = [...results].sort((a, b) => {
@@ -287,7 +286,7 @@ export default function Classifier() {
           disabled={isProcessing || reviewInput.trim().length === 0}
           className="flex-1 h-11 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
         >
-          {isProcessing && <Spinner className="h-4 w-4 mr-2 text-white" />}
+          {isProcessing && <Loader variant="spinner" size="sm" className="p-0 mr-1 inline-flex" />}
           {results.length > 0 ? "Re-Classify Reviews" : "Classify Reviews"}
         </Button>
         {results.length > 0 && (
@@ -305,7 +304,7 @@ export default function Classifier() {
   );
 
   return (
-    <div className="min-h-screen transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Tabs defaultValue="classifier" className="w-full">
         {/* Navigation Bar */}
         <header className="sticky top-0 z-50 glass-header">
@@ -343,7 +342,14 @@ export default function Classifier() {
                     Verifier
                   </TabsTrigger>
                 </TabsList>
-                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsInfoOpen(true)}
+                  className="h-9 px-3 rounded-xl border-slate-200/80 dark:border-slate-800 text-slate-750 dark:text-slate-300 font-bold"
+                >
+                  Model Info
+                </Button>
               </div>
             </div>
           </div>
@@ -446,7 +452,7 @@ export default function Classifier() {
                           disabled={isProcessing || reviewInput.trim().length === 0}
                           className="w-full sm:w-auto h-11 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
                         >
-                          {isProcessing && <Spinner className="h-4 w-4 mr-2 text-white" />}
+                          {isProcessing && <Loader variant="spinner" size="sm" className="p-0 mr-1 inline-flex" />}
                           Re-Classify Reviews
                         </Button>
                       </div>
@@ -478,7 +484,7 @@ export default function Classifier() {
                       <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Pending</div>
                     </div>
                     <div className="rounded-xl bg-rose-50/80 dark:bg-rose-500/10 p-2.5 border border-rose-100 dark:border-rose-500/15">
-                      <div className="text-lg font-black text-rose-600 dark:text-rose-455 animate-pulse">{progressStats.error}</div>
+                      <div className="text-lg font-black text-rose-600 dark:text-rose-400 animate-pulse">{progressStats.error}</div>
                       <div className="text-[10px] font-medium text-slate-400">Errors</div>
                     </div>
                   </div>
@@ -602,7 +608,7 @@ export default function Classifier() {
                         <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">Pending</div>
                       </div>
                       <div className="rounded-xl bg-rose-50/80 dark:bg-rose-500/10 p-2.5 border border-rose-100 dark:border-rose-500/15">
-                        <div className="text-lg font-black text-rose-600 dark:text-rose-405 animate-pulse">{progressStats.error}</div>
+                        <div className="text-lg font-black text-rose-600 dark:text-rose-400 animate-pulse">{progressStats.error}</div>
                         <div className="text-[10px] font-medium text-slate-400">Errors</div>
                       </div>
                     </div>
@@ -611,7 +617,7 @@ export default function Classifier() {
                         <div key={item.index} className="flex items-center gap-2 rounded-lg bg-slate-50/50 dark:bg-slate-950/20 p-2 border border-slate-100 dark:border-slate-800/40 text-xs">
                           <div className="flex-shrink-0">
                             {item.status === "completed" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
-                            {item.status === "processing" && <Spinner className="h-4 w-4 text-blue-500" />}
+                            {item.status === "processing" && <Loader variant="spinner" size="sm" className="p-0 inline-flex text-blue-500" />}
                             {item.status === "pending" && <div className="h-4 w-4 rounded-full border border-amber-300 bg-amber-500/5" />}
                             {item.status === "error" && <AlertCircle className="h-4 w-4 text-rose-500" />}
                           </div>
@@ -624,16 +630,26 @@ export default function Classifier() {
               </div>
 
               {/* Results Section */}
-              <div className="lg:col-span-7">
-                <Card className="glass-card border shadow-sm text-center py-20 px-6 h-full flex flex-col justify-center items-center space-y-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-450 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800/60">
-                    <ListFilter className="h-7 w-7 text-slate-400 dark:text-slate-500 animate-pulse" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">Awaiting Audits</CardTitle>
-                  <CardDescription className="text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                    Input reviews on the left or select a preset template, and click "Classify Reviews" to run the classification model.
-                  </CardDescription>
-                </Card>
+              <div className="lg:col-span-7 h-full">
+                {isProcessing ? (
+                  <Card className="glass-card border shadow-sm p-8 h-full flex flex-col justify-center space-y-6 min-h-[300px]">
+                    <div className="space-y-2">
+                      <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">Analyzing reviews...</CardTitle>
+                      <CardDescription className="text-sm text-slate-500">Gemini is processing the audit batch</CardDescription>
+                    </div>
+                    <Loader variant="skeleton" count={4} />
+                  </Card>
+                ) : (
+                  <Card className="glass-card border shadow-sm text-center py-20 px-6 h-full flex flex-col justify-center items-center space-y-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200/60 dark:border-slate-800/60">
+                      <ListFilter className="h-7 w-7 text-slate-400 dark:text-slate-500 animate-pulse" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">Awaiting Audits</CardTitle>
+                    <CardDescription className="text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                      Input reviews on the left or select a preset template, and click "Classify Reviews" to run the classification model.
+                    </CardDescription>
+                  </Card>
+                )}
               </div>
             </div>
           )}
@@ -659,6 +675,27 @@ export default function Classifier() {
           <TestReport />
         </TabsContent>
       </Tabs>
+
+      <Modal isOpen={isInfoOpen} onClose={() => setIsInfoOpen(false)} title="Gemini AI Model Details">
+        <div className="space-y-4">
+          <p className="text-slate-600 dark:text-slate-300">
+            SentiNest leverages the Google Gemini model to perform automated, high-accuracy multi-class sentiment analysis and theme tag extraction.
+          </p>
+          <div className="space-y-1">
+            <h4 className="font-bold text-slate-800 dark:text-slate-200">Supported Sentiments:</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Positive, Neutral, Negative</p>
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-bold text-slate-800 dark:text-slate-200">Supported Themes:</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Cleanliness, Host, Food, Location, Value, Experience</p>
+          </div>
+          <div className="pt-2">
+            <Button onClick={() => setIsInfoOpen(false)} className="w-full">
+              Got it
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

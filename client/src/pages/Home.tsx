@@ -2,11 +2,11 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Card from "@/components/Card";
 import Footer from "@/components/Footer";
-import { Sparkles, BarChart3, Zap } from "lucide-react";
+import { Sparkles, BarChart3, Zap, FileText, Cpu, ListFilter } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* Reusable Header Navbar */}
       <Navbar />
 
@@ -56,8 +56,8 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">How It Works</h3>
             <div className="grid gap-8 md:grid-cols-3">
               <div className="flex gap-4">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-205 border border-slate-200/60 dark:border-slate-700/65">
-                  1
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/65">
+                  <FileText className="h-5 w-5 text-indigo-500" />
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-bold text-slate-900 dark:text-white text-base">Input Reviews</h4>
@@ -67,8 +67,8 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-205 border border-slate-200/60 dark:border-slate-700/65">
-                  2
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/65">
+                  <Cpu className="h-5 w-5 text-emerald-500" />
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-bold text-slate-900 dark:text-white text-base">AI Analysis</h4>
@@ -78,8 +78,8 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex gap-4">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-205 border border-slate-200/60 dark:border-slate-700/65">
-                  3
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/65">
+                  <ListFilter className="h-5 w-5 text-purple-500" />
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-bold text-slate-900 dark:text-white text-base">Review & Export</h4>

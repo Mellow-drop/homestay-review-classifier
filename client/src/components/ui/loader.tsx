@@ -1,6 +1,13 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Props for the custom Loader component.
+ * @property {"spinner" | "skeleton"} [variant] - Visual type of loader. "spinner" renders a spinning ring; "skeleton" renders animated placeholder blocks.
+ * @property {string} [className] - Optional custom CSS classes.
+ * @property {"sm" | "md" | "lg"} [size] - Visual size of the spinner.
+ * @property {number} [count] - Number of skeleton rows to render when variant is "skeleton".
+ */
 interface LoaderProps {
   variant?: "spinner" | "skeleton";
   className?: string;
@@ -8,6 +15,9 @@ interface LoaderProps {
   count?: number; // For skeleton lines
 }
 
+/**
+ * Reusable loading indicator supporting spinning rings and line skeleton loading states.
+ */
 export function Loader({
   variant = "spinner",
   className,

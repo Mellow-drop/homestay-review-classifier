@@ -38,7 +38,7 @@ export default function Hero({
             </>
           )}
         </h2>
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-305 leading-relaxed font-normal max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
           {description}
         </p>
       </div>
@@ -48,7 +48,7 @@ export default function Hero({
           <Link href={ctaLink}>
             <Button
               size="lg"
-              className="w-full sm:w-auto h-12 px-8 gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-550 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
+              className="w-full sm:w-auto h-12 px-8 gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
             >
               {ctaText}
               <ArrowRight className="h-4 w-4" />

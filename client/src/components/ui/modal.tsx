@@ -3,6 +3,13 @@ import ReactDOM from "react-dom";
 import { X } from "lucide-react";
 import { Button } from "./button";
 
+/**
+ * Props for the custom Modal overlay component.
+ * @property {boolean} isOpen - Determines whether the modal is visible.
+ * @property {function} onClose - Callback handler to close the modal (e.g. clicking backdrop, close button, or pressing escape).
+ * @property {string} [title] - Optional title text rendered in the modal header.
+ * @property {React.ReactNode} children - Content elements rendered inside the modal body.
+ */
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,6 +17,9 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
+/**
+ * Reusable modal popup overlay component with focus trapping, ESC key dismiss, and light/dark theme styling.
+ */
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -93,7 +103,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       {/* Modal Card */}
       <div
         ref={modalRef}
-        className="relative bg-white dark:bg-slate-950 border border-slate-205 dark:border-slate-800/80 w-full max-w-lg rounded-2xl p-6 shadow-xl flex flex-col gap-4 animate-scale-in z-10 transition-colors duration-200"
+        className="relative bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 w-full max-w-lg rounded-2xl p-6 shadow-xl flex flex-col gap-4 animate-scale-in z-10 transition-colors duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -119,7 +129,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </div>
 
         {/* Content Body */}
-        <div className="text-sm text-slate-650 dark:text-slate-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
+        <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
           {children}
         </div>
       </div>

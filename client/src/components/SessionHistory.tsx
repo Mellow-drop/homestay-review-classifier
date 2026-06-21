@@ -106,7 +106,7 @@ export default function SessionHistory() {
     return (
       <Card className="glass-card border shadow-sm max-w-2xl mx-auto text-center py-16 px-6">
         <CardContent className="space-y-4">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-500">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500">
             <History className="h-8 w-8" />
           </div>
           <CardTitle className="text-2xl font-bold text-slate-900 dark:text-white">No Sessions Yet</CardTitle>
@@ -147,7 +147,7 @@ export default function SessionHistory() {
               <CollapsibleTrigger asChild>
                 <div className="p-6 sm:p-7 flex items-center justify-between w-full cursor-pointer group hover:bg-slate-50/40 dark:hover:bg-slate-900/10 transition-colors duration-150">
                   <div className="flex items-start gap-4">
-                    <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-450 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 transition-colors border border-slate-200/40 dark:border-slate-800/40">
+                    <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 transition-colors border border-slate-200/40 dark:border-slate-800/40">
                       <Calendar className="h-5 w-5 text-slate-500" />
                     </div>
                     <div className="space-y-1.5">
@@ -155,7 +155,7 @@ export default function SessionHistory() {
                         {session.sessionName || `Audit Session #${session.id}`}
                       </div>
                       <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex flex-wrap gap-2.5 items-center">
-                        <span className="bg-slate-105/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase border border-slate-205/40">
+                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase border border-slate-200/40">
                           {session.totalReviews} reviews
                         </span>
                         <span className="h-1.5 w-1.5 rounded-full bg-slate-200 dark:bg-slate-700" />
@@ -173,7 +173,7 @@ export default function SessionHistory() {
                 </div>
               </CollapsibleTrigger>
 
-              <CollapsibleContent className="border-t border-slate-100 dark:border-slate-850 p-6 sm:p-7 bg-slate-50/20 dark:bg-slate-950/10">
+              <CollapsibleContent className="border-t border-slate-100 dark:border-slate-800 p-6 sm:p-7 bg-slate-50/20 dark:bg-slate-950/10">
                 {sessionDetailsQuery.isLoading && expandedSession === session.id ? (
                   <div className="flex items-center justify-center py-12">
                     <Spinner className="h-7 w-7 text-emerald-500" />
