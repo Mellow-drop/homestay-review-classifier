@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light";
+type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
@@ -18,14 +18,39 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
+  defaultTheme = "light",
+  switchable = true,
 }: ThemeProviderProps) {
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (!switchable) return "light";
+    const saved = localStorage.getItem("theme");
+    if (saved === "light" || saved === "dark") {
+      return saved;
+    }
+    // Fallback to media query preference
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return defaultTheme;
+  });
+
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("dark");
-  }, []);
+    if (theme === "dark" && switchable) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme, switchable]);
+
+  const toggleTheme = () => {
+    if (!switchable) return;
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme: "light", toggleTheme: () => {}, switchable: false }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { TreePine, Menu, X } from "lucide-react";
+import { TreePine, Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function Navbar() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -60,13 +62,33 @@ export default function Navbar() {
 
           {/* Desktop Action Area */}
           <div className="hidden md:flex items-center gap-3">
-            <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-850 dark:text-slate-200 border border-slate-200/50 dark:border-slate-700/50">
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-105 dark:hover:bg-slate-800"
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            >
+              {theme === "light" ? <Moon className="h-4.5 w-4.5" /> : <Sun className="h-4.5 w-4.5 text-amber-400" />}
+            </Button>
+
+            <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-bold text-slate-850 dark:text-slate-205 border border-slate-200/50 dark:border-slate-700/50">
               Staff Portal
             </span>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden">
+          {/* Mobile Menu Button & Theme Toggle */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-xl text-slate-600 dark:text-slate-400"
+            >
+              {theme === "light" ? <Moon className="h-4.5 w-4.5" /> : <Sun className="h-4.5 w-4.5 text-amber-400" />}
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -101,7 +123,7 @@ export default function Navbar() {
             );
           })}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-900 flex justify-center">
-            <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-205 dark:border-slate-700">
+            <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-202 border border-slate-205 dark:border-slate-700">
               Staff Portal
             </span>
           </div>
