@@ -17,7 +17,8 @@ A premium review auditing application that analyzes guest feedback (sentiment & 
    - `GEMINI_API_KEY`: Obtain from Google AI Studio.
    - `DATABASE_URL`: PostgreSQL connection string (compatible with Supabase, neon, etc.).
 
-### 2. Run Backend (FastAPI)
+## How to run backend locally
+
 1. Create and activate a Python virtual environment:
    ```bash
    python -m venv venv
