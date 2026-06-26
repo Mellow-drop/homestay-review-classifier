@@ -10,7 +10,8 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, desc
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
-import google.generativeai as genai
+import urllib.request
+import urllib.error
 from dotenv import load_dotenv
 
 # Set up logging
@@ -21,9 +22,7 @@ logger = logging.getLogger("sentiment-classifier")
 load_dotenv()
 
 gemini_key = os.environ.get("GEMINI_API_KEY")
-if gemini_key:
-    genai.configure(api_key=gemini_key)
-else:
+if not gemini_key:
     logger.warning("GEMINI_API_KEY is not set. Classification requests will fallback to local heuristics.")
 
 # Setup Database Connection
@@ -437,16 +436,46 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
         )
 
         try:
-            model = genai.GenerativeModel(
-                model_name='gemini-3.5-flash',
-                system_instruction=system_instruction,
-                generation_config={"response_mime_type": "application/json"}
-            )
+            if not gemini_key:
+                raise Exception("GEMINI_API_KEY not configured")
+                
             # Prepare input payload
             input_payload = json.dumps(remaining_reviews)
-            # Call Gemini in batch
-            response = model.generate_content(input_payload)
-            content = response.text
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            data = {
+                "system_instruction": {
+                    "parts": [{"text": system_instruction}]
+                },
+                "contents": [
+                    {
+                        "parts": [{"text": input_payload}]
+                    }
+                ],
+                "generationConfig": {
+                    "responseMimeType": "application/json"
+                }
+            }
+            
+            req = urllib.request.Request(
+                url, 
+                data=json.dumps(data).encode("utf-8"), 
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            
+            try:
+                with urllib.request.urlopen(req) as response:
+                    result = json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as he:
+                err_msg = he.read().decode("utf-8")
+                raise Exception(f"HTTPError {he.code}: {err_msg}")
+                
+            # Extract text from the Gemini response structure
+            try:
+                content = result["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError):
+                raise Exception(f"Unexpected response structure from Gemini API: {result}")
             
             if not content:
                 raise Exception("Empty response from Gemini API")
