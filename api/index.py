@@ -5,6 +5,8 @@ import logging
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, desc
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
@@ -105,6 +107,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Exception Handlers
+@app.exception_handler(RequestValidationError)
+def validation_exception_handler(request, exc):
+    logger.error(f"Validation error: {exc}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": "Validation error in request payload.", "errors": exc.errors()}
+    )
+
+@app.exception_handler(HTTPException)
+def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
+
+@app.exception_handler(Exception)
+def global_exception_handler(request, exc):
+    logger.error(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred.", "error": str(exc)}
+    )
+
 # Pydantic Schemas
 class ClassifyRequest(BaseModel):
     reviews: List[str] = Field(..., min_items=1, description="List of review strings to analyze")
@@ -137,6 +163,23 @@ class SessionBrief(BaseModel):
 class SessionDetails(BaseModel):
     session: SessionBrief
     reviews: List[ReviewResponse]
+
+class SessionUpdate(BaseModel):
+    sessionName: str = Field(..., min_length=1, max_length=255)
+
+class SearchReviewResponse(BaseModel):
+    id: int
+    sessionId: int
+    sessionName: str
+    originalReview: str
+    sentiment: str
+    theme: str
+    suggestedResponse: str
+    createdAt: datetime.datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
 
 # API Endpoints
 
@@ -558,4 +601,81 @@ def get_session_details(session_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         logger.error(f"Error fetching session details for {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
+
+@app.patch("/api/sessions/{session_id}", response_model=SessionBrief)
+def update_session(session_id: int, session_data: SessionUpdate, db: Session = Depends(get_db)):
+    try:
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        if not session_obj:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        session_obj.session_name = session_data.sessionName
+        db.commit()
+        db.refresh(session_obj)
+        
+        return SessionBrief(
+            id=session_obj.id,
+            sessionName=session_obj.session_name,
+            totalReviews=session_obj.total_reviews,
+            createdAt=session_obj.created_at
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
+
+@app.delete("/api/sessions/{session_id}")
+def delete_session(session_id: int, db: Session = Depends(get_db)):
+    try:
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        if not session_obj:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        db.delete(session_obj)
+        db.commit()
+        return {"message": "Session deleted successfully", "sessionId": session_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database deletion failed: {str(e)}")
+
+@app.get("/api/reviews/search", response_model=List[SearchReviewResponse])
+def search_reviews(
+    q: Optional[str] = None, 
+    sentiment: Optional[str] = None, 
+    theme: Optional[str] = None, 
+    db: Session = Depends(get_db)
+):
+    try:
+        query = db.query(ClassifiedReviewModel).join(SessionModel)
+        
+        if q:
+            query = query.filter(ClassifiedReviewModel.original_review.ilike(f"%{q}%"))
+        if sentiment:
+            query = query.filter(ClassifiedReviewModel.sentiment == sentiment.lower())
+        if theme:
+            query = query.filter(ClassifiedReviewModel.theme == theme.lower())
+            
+        reviews = query.order_by(desc(ClassifiedReviewModel.created_at)).all()
+        
+        results = []
+        for r in reviews:
+            results.append(SearchReviewResponse(
+                id=r.id,
+                sessionId=r.session_id,
+                sessionName=r.session.session_name,
+                originalReview=r.original_review,
+                sentiment=r.sentiment,
+                theme=r.theme,
+                suggestedResponse=r.suggested_response,
+                createdAt=r.created_at
+            ))
+        return results
+    except Exception as e:
+        logger.error(f"Error searching reviews: {e}")
         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
