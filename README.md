@@ -1,6 +1,6 @@
 # SentiNest - Review Sentiment Center
 
-**Live Demo:** [https://homestay-review-classifier-683ia448y.vercel.app/](https://homestay-review-classifier-683ia448y.vercel.app/)
+**Live Demo:** [https://homestay-review-classifier.vercel.app/](https://homestay-review-classifier.vercel.app/)
 
 A premium review auditing application that analyzes guest feedback (sentiment & operational themes), generates suggested management replies, and runs local model accuracy evaluations.
 
