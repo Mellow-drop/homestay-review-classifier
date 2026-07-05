@@ -619,21 +619,20 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     # 4. Batch save classified reviews to the database
     if classified_reviews:
         try:
-            db.add_all(classified_reviews)
-            db.flush()   # assigns DB IDs without committing
+            db.bulk_save_objects(classified_reviews)
             db.commit()
-            for r in classified_reviews:
-                db.refresh(r)
         except Exception as e:
             db.rollback()
             logger.error(f"Error saving classified reviews to DB: {e}")
             errors.append({"index": -1, "review": "DB Write Batch", "error": f"Failed to save classifications: {str(e)}"})
 
-    # Prepare response data matching the input list order
+    # Prepare response - re-fetch from DB so we have proper IDs
     final_classifications = []
+    saved_reviews = db.query(ClassifiedReviewModel).filter(
+        ClassifiedReviewModel.session_id == db_session.id
+    ).all()
     
-    # We use the generated rows, which now could be multiple rows per review string.
-    for r in classified_reviews:
+    for r in saved_reviews:
         final_classifications.append(ReviewResponse(
             id=r.id,
             originalReview=r.original_review,
