@@ -147,7 +147,8 @@ export default function SessionHistory() {
         // Escape quotes and wrap in quotes for CSV
         const safeReview = `"${r.originalReview.replace(/"/g, '""')}"`;
         const safeResponse = `"${r.suggestedResponse.replace(/"/g, '""')}"`;
-        csvContent += `${safeReview},${r.sentiment},${r.theme},${safeResponse},${r.urgencyLevel},${r.needsEscalation}\n`;
+        const safeTheme = `"${(r.theme || "").replace(/"/g, '""')}"`;
+        csvContent += `${safeReview},${r.sentiment},${safeTheme},${safeResponse},${r.urgencyLevel},${r.needsEscalation}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
