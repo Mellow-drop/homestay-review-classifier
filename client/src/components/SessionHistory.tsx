@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -352,9 +353,13 @@ export default function SessionHistory() {
                           </Button>
                         )}
                       </div>
-                      <div className={`text-sm leading-relaxed ${summaryData[session.id] ? "text-emerald-950 dark:text-emerald-50 font-medium italic border-l-2 border-emerald-400 pl-4 py-1" : "text-emerald-600/80 dark:text-emerald-400/80"}`}>
+                      <div className={`text-sm leading-relaxed ${summaryData[session.id] ? "text-emerald-950 dark:text-emerald-50 text-left" : "text-emerald-600/80 dark:text-emerald-400/80 italic pl-4 border-l-2 border-emerald-400 py-1"}`}>
                         {summaryData[session.id] 
-                          ? summaryData[session.id]
+                          ? (
+                              <ReactMarkdown className="prose prose-sm prose-emerald dark:prose-invert max-w-none leading-relaxed [&>p]:mb-3 last:[&>p]:mb-0 [&>strong]:text-emerald-800 dark:[&>strong]:text-emerald-300">
+                                {summaryData[session.id]}
+                              </ReactMarkdown>
+                            )
                           : "Generate a 1-paragraph summary of these reviews using Google Gemini."}
                       </div>
                     </div>

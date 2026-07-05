@@ -619,7 +619,8 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     # 4. Save to DB
     if classified_reviews:
         try:
-            db.bulk_save_objects(classified_reviews)
+            for r in classified_reviews:
+                db.add(r)
             db.commit()
         except Exception as e:
             db.rollback()
