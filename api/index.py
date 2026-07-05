@@ -104,7 +104,7 @@ class ClassifiedReviewModel(Base):
     session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
     original_review = Column(Text, nullable=False)
     sentiment = Column(String(20), nullable=False)
-    theme = Column(String(50), nullable=False)
+    theme = Column(String(255), nullable=False)
     suggested_response = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     urgency_level = Column(String(20), default='low', nullable=False)
@@ -169,6 +169,7 @@ class ClassifyRequest(BaseModel):
     brandVoice: Optional[str] = Field(None, description="Optional brand voice instructions for the AI")
 
 class ReviewResponse(BaseModel):
+    id: Optional[int] = Field(default=None)
     originalReview: str
     sentiment: str
     theme: str
@@ -674,10 +675,13 @@ def get_session_details(session_id: int, db: Session = Depends(get_db)):
         
         review_responses = [
             ReviewResponse(
+                id=r.id,
                 originalReview=r.original_review,
                 sentiment=r.sentiment,
                 theme=r.theme,
-                suggestedResponse=r.suggested_response
+                suggestedResponse=r.suggested_response,
+                urgencyLevel=r.urgency_level,
+                needsEscalation=r.needs_escalation
             ) for r in reviews
         ]
         
