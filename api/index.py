@@ -616,7 +616,7 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                     logger.error(f"Failed local fallback classification for {review}: {fe}")
                     errors.append({"index": -1, "review": review, "error": str(fe)})
 
-    # 4. Batch save classified reviews to the database
+    # 4. Save to DB
     if classified_reviews:
         try:
             db.bulk_save_objects(classified_reviews)
@@ -626,22 +626,18 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
             logger.error(f"Error saving classified reviews to DB: {e}")
             errors.append({"index": -1, "review": "DB Write Batch", "error": f"Failed to save classifications: {str(e)}"})
 
-    # Prepare response - re-fetch from DB so we have proper IDs
-    final_classifications = []
-    saved_reviews = db.query(ClassifiedReviewModel).filter(
-        ClassifiedReviewModel.session_id == db_session.id
-    ).all()
-    
-    for r in saved_reviews:
-        final_classifications.append(ReviewResponse(
-            id=r.id,
+    # Build response from in-memory list
+    final_classifications = [
+        ReviewResponse(
             originalReview=r.original_review,
             sentiment=r.sentiment,
             theme=r.theme,
             suggestedResponse=r.suggested_response,
             urgencyLevel=r.urgency_level,
             needsEscalation=r.needs_escalation
-        ))
+        )
+        for r in classified_reviews
+    ]
 
     return ClassifyResponse(
         sessionId=db_session.id,
