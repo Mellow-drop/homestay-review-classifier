@@ -377,7 +377,7 @@ export default function SessionHistory() {
                                 <select 
                                   value={editSentiment} 
                                   onChange={(e) => setEditSentiment(e.target.value)}
-                                  className="h-8 px-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300"
+                                  className="h-9 w-full px-3 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500/50 outline-none text-slate-700 dark:text-slate-300 transition-shadow"
                                 >
                                   <option value="positive">Positive</option>
                                   <option value="neutral">Neutral</option>
@@ -394,7 +394,7 @@ export default function SessionHistory() {
                                 <select 
                                   value={editTheme} 
                                   onChange={(e) => setEditTheme(e.target.value)}
-                                  className="h-8 px-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300"
+                                  className="h-9 w-full px-3 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500/50 outline-none text-slate-700 dark:text-slate-300 transition-shadow"
                                 >
                                   <option value="food">Food</option>
                                   <option value="host">Host</option>
@@ -415,7 +415,7 @@ export default function SessionHistory() {
                                 <textarea 
                                   value={editResponse}
                                   onChange={(e) => setEditResponse(e.target.value)}
-                                  className="w-full min-h-[60px] p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300 resize-y"
+                                  className="w-full min-h-[80px] p-3 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500/50 outline-none text-slate-700 dark:text-slate-300 resize-y transition-shadow leading-relaxed shadow-sm"
                                 />
                               ) : (
                                 <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic whitespace-pre-wrap">

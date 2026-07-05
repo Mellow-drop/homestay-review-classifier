@@ -259,26 +259,28 @@ export default function Dashboard() {
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Review Word Cloud</h3>
                 </div>
                 {wordCloudData.length > 0 ? (
-                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 py-4 px-2 min-h-[250px]">
-                    {wordCloudData.map((item, idx) => {
-                      // Calculate size between 12px and 36px based on relative frequency
+                  <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-3 py-6 px-4 min-h-[250px] relative">
+                    {(() => {
                       const maxCount = Math.max(...wordCloudData.map(d => d.count));
-                      const fontSize = Math.max(12, Math.min(36, (item.count / maxCount) * 40));
-                      // Cycle through brand colors
-                      const colors = ['text-emerald-500', 'text-blue-500', 'text-indigo-500', 'text-slate-600 dark:text-slate-400', 'text-purple-500'];
-                      const colorClass = colors[idx % colors.length];
-                      
-                      return (
-                        <span 
-                          key={idx} 
-                          className={`font-bold transition-transform hover:scale-110 cursor-default ${colorClass}`}
-                          style={{ fontSize: `${fontSize}px`, opacity: Math.max(0.4, item.count / maxCount + 0.2) }}
-                          title={`${item.count} mentions`}
-                        >
-                          {item.word}
-                        </span>
-                      );
-                    })}
+                      return wordCloudData.map((item, idx) => {
+                        // Calculate size between 14px and 48px based on relative frequency
+                        const fontSize = Math.max(14, Math.min(48, (item.count / maxCount) * 56));
+                        // Cycle through brand colors
+                        const colors = ['text-emerald-600 dark:text-emerald-400', 'text-blue-600 dark:text-blue-400', 'text-indigo-600 dark:text-indigo-400', 'text-slate-700 dark:text-slate-300', 'text-purple-600 dark:text-purple-400', 'text-rose-600 dark:text-rose-400'];
+                        const colorClass = colors[idx % colors.length];
+                        
+                        return (
+                          <span 
+                            key={idx} 
+                            className={`font-extrabold transition-all duration-300 hover:scale-110 cursor-default opacity-90 hover:opacity-100 ${colorClass}`}
+                            style={{ fontSize: `${fontSize}px` }}
+                            title={`${item.count} mentions`}
+                          >
+                            {item.word}
+                          </span>
+                        );
+                      });
+                    })()}
                   </div>
                 ) : (
                   <div className="flex-grow flex items-center justify-center text-slate-400 text-sm min-h-[200px]">No words available</div>
