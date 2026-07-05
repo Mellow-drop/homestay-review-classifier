@@ -612,17 +612,17 @@ export default function Classifier() {
                           </TableHead>
                           <TableHead
                             onClick={() => handleSort("sentiment")}
-                            className="cursor-pointer font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-28 hover:text-slate-900 dark:hover:text-white"
+                            className="cursor-pointer font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-28 hover:text-slate-900 dark:hover:text-white"
                           >
                             Sentiment {sortColumn === "sentiment" && (sortOrder === "asc" ? <ChevronUp className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" /> : <ChevronDown className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" />)}
                           </TableHead>
                           <TableHead
                             onClick={() => handleSort("theme")}
-                            className="cursor-pointer font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32 hover:text-slate-900 dark:hover:text-white"
+                            className="cursor-pointer font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-32 hover:text-slate-900 dark:hover:text-white"
                           >
                             Theme {sortColumn === "theme" && (sortOrder === "asc" ? <ChevronUp className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" /> : <ChevronDown className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" />)}
                           </TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
+                          <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[320px]">Suggested Reply</TableHead>
                           <TableHead className="w-16 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
                         </TableRow>
@@ -633,20 +633,27 @@ export default function Classifier() {
                             <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pr-6 leading-relaxed whitespace-pre-wrap">
                               {result.originalReview}
                             </TableCell>
-                            <TableCell className="py-4">
+                            <TableCell className="py-4 text-center">
                               <Badge className={`${sentimentColors[result.sentiment]} font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
                                 {result.sentiment}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-4">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
-                                <span>{themeIcons[result.theme]}</span>
-                                <span className="capitalize">{result.theme}</span>
-                              </span>
+                            <TableCell className="py-4 text-center">
+                              <div className="flex flex-wrap items-center justify-center gap-2">
+                                {(result.theme || 'experience').split(',').map((t) => {
+                                  const themeName = t.trim();
+                                  return (
+                                    <span key={themeName} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
+                                      <span>{themeIcons[themeName] || themeIcons['experience']}</span>
+                                      <span className="capitalize">{themeName}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
                             </TableCell>
-                            <TableCell className="py-4">
+                            <TableCell className="py-4 text-center">
                               {result.urgencyLevel && (
-                                <div className="flex flex-col gap-1 items-start">
+                                <div className="flex flex-col gap-1 items-center">
                                   <Badge className={`${
                                     result.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
                                     result.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :

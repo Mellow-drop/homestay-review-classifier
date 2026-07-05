@@ -487,8 +487,8 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
             "]\n"
             "Example Output:\n"
             "[\n"
-            "  {\"id\": 0, \"sentiment\": \"positive\", \"theme\": \"food\", \"response\": \"We're so glad you enjoyed our breakfast! Hope to see you again soon.\", \"urgencyLevel\": \"low\", \"needsEscalation\": false},\n"
-            "  {\"id\": 1, \"sentiment\": \"negative\", \"theme\": \"cleanliness\", \"response\": \"We apologize for the room condition and have addressed this with our cleaning staff.\", \"urgencyLevel\": \"medium\", \"needsEscalation\": false}\n"
+            "  {\"id\": 0, \"sentiment\": \"positive\", \"theme\": [\"food\"], \"response\": \"We're so glad you enjoyed our breakfast! Hope to see you again soon.\", \"urgencyLevel\": \"low\", \"needsEscalation\": false},\n"
+            "  {\"id\": 1, \"sentiment\": \"negative\", \"theme\": [\"cleanliness\", \"experience\"], \"response\": \"We apologize for the room condition and have addressed this with our cleaning staff.\", \"urgencyLevel\": \"medium\", \"needsEscalation\": false}\n"
             "]"
         )
 
@@ -551,8 +551,13 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                         urg_level = parsed_item.get("urgencyLevel", "low")
                         escalation = parsed_item.get("needsEscalation", False)
                         
+                        if isinstance(theme, list):
+                            theme = ", ".join(theme)
+                            
+                        if not theme:
+                            theme = "experience"
+                        
                         if sentiment not in ["positive", "neutral", "negative"] or \
-                           theme not in ["food", "host", "location", "cleanliness", "value", "experience"] or \
                            not suggested_resp:
                             raise Exception("Invalid fields in batch item, triggering fallback")
 
@@ -756,6 +761,8 @@ def search_reviews(
                 sentiment=r.sentiment,
                 theme=r.theme,
                 suggestedResponse=r.suggested_response,
+                urgencyLevel=r.urgency_level,
+                needsEscalation=r.needs_escalation,
                 createdAt=r.created_at
             ))
         return results
