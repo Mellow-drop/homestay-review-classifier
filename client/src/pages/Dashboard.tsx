@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { TrendingUp, Users, Award, AlertCircle } from "lucide-react";
+import { TrendingUp, Users, Award, AlertCircle, MessageSquare, Clock } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { 
   PieChart, Pie, Cell, 
@@ -14,12 +14,28 @@ interface Review {
   id: number;
   sentiment: "positive" | "neutral" | "negative";
   theme: string;
+  originalReview: string;
+  createdAt: string;
 }
 
 const SENTIMENT_COLORS = {
   positive: "#10b981", // emerald-500
   neutral: "#64748b",  // slate-500
   negative: "#f43f5e", // rose-500
+};
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg">
+        <p className="text-sm font-bold text-slate-900 dark:text-white">{label || payload[0].name}</p>
+        <p className="text-sm font-medium" style={{ color: payload[0].payload.color || payload[0].fill }}>
+          {payload[0].value} {payload[0].value === 1 ? 'mention' : 'mentions'}
+        </p>
+      </div>
+    );
+  }
+  return null;
 };
 
 export default function Dashboard() {
@@ -139,10 +155,7 @@ export default function Dashboard() {
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip 
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
-                          />
+                          <Tooltip content={<CustomTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -160,16 +173,54 @@ export default function Dashboard() {
                         <BarChart data={themeData} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={80} />
-                          <Tooltip 
-                            cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
+                          <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} content={<CustomTooltip />} />
                           <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} barSize={24} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
                     <div className="flex-grow flex items-center justify-center text-slate-400 text-sm">No data available</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="mt-8 rounded-3xl glass-card p-6 border shadow-sm">
+                <div className="flex items-center gap-2 mb-6">
+                  <Clock className="h-5 w-5 text-slate-500" />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Classifications</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {reviews?.slice(0, 5).map((review) => (
+                    <div key={review.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md">
+                      <div className="flex items-start gap-3 overflow-hidden">
+                        <MessageSquare className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                        <div className="truncate pr-4">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                            "{review.originalReview}"
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {new Date(review.createdAt).toLocaleDateString()} at {new Date(review.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3 sm:mt-0 shrink-0">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                          review.sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                          review.sentiment === 'negative' ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400' :
+                          'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                        }`}>
+                          {review.sentiment.charAt(0).toUpperCase() + review.sentiment.slice(1)}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400">
+                          {review.theme.charAt(0).toUpperCase() + review.theme.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {(!reviews || reviews.length === 0) && (
+                    <div className="text-center py-6 text-sm text-slate-500">No recent activity found.</div>
                   )}
                 </div>
               </div>
