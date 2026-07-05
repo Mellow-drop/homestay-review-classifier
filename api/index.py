@@ -430,10 +430,10 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
         system_instruction = (
             "You are an expert hospitality analyst. Classify guest reviews with precision."
             f"{brand_voice_prompt}"
-            "You will receive a JSON list of review strings. You must return a JSON array containing one or more classification objects for EVERY input review.\n"
-            "If a single review mentions multiple themes (e.g. food and cleanliness), you MUST return multiple separate objects for that same review, each with its own theme and sentiment.\n"
+            "You will receive a JSON list of objects, each with an 'id' and 'text'. You must return a JSON array containing one or more classification objects for EVERY input review.\n"
+            "If a single review mentions multiple themes (e.g. food and cleanliness), you MUST return multiple separate objects for that same review, each with its own theme and sentiment, but BOTH having the SAME 'id' as the input review.\n"
             "Each object must contain these exact fields:\n"
-            "- originalReview: The exact string of the input review you are classifying.\n"
+            "- id: The exact integer 'id' of the input review you are classifying.\n"
             "- sentiment: one of \"positive\", \"neutral\", or \"negative\"\n"
             "- theme: one of \"food\", \"host\", \"location\", \"cleanliness\", \"value\", or \"experience\"\n"
             "- response: a one-line suggested management response (professional, empathetic, 15-25 words)\n"
@@ -451,11 +451,14 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
             "- 'neutral': if the review is mixed, average, plain description, or expressing indifferent feelings (e.g. 'okay', 'standard', 'nothing special').\n"
             "- 'negative': if the review expresses disappointment, anger, dissatisfaction, or complains about issues.\n\n"
             "Example Input:\n"
-            "[\"The food was great!\", \"Room was dirty.\"]\n"
+            "[\n"
+            "  {\"id\": 0, \"text\": \"The food was great!\"},\n"
+            "  {\"id\": 1, \"text\": \"Room was dirty.\"\n"
+            "]\n"
             "Example Output:\n"
             "[\n"
-            "  {\"originalReview\":\"The food was great!\",\"sentiment\":\"positive\",\"theme\":\"food\",\"response\":\"We're so glad you enjoyed our breakfast! Hope to see you again soon.\",\"urgencyLevel\":\"low\",\"needsEscalation\":false},\n"
-            "  {\"originalReview\":\"Room was dirty.\",\"sentiment\":\"negative\",\"theme\":\"cleanliness\",\"response\":\"We apologize for the room condition and have addressed this with our cleaning staff.\",\"urgencyLevel\":\"medium\",\"needsEscalation\":false}\n"
+            "  {\"id\": 0, \"sentiment\": \"positive\", \"theme\": \"food\", \"response\": \"We're so glad you enjoyed our breakfast! Hope to see you again soon.\", \"urgencyLevel\": \"low\", \"needsEscalation\": false},\n"
+            "  {\"id\": 1, \"sentiment\": \"negative\", \"theme\": \"cleanliness\", \"response\": \"We apologize for the room condition and have addressed this with our cleaning staff.\", \"urgencyLevel\": \"medium\", \"needsEscalation\": false}\n"
             "]"
         )
 
@@ -464,7 +467,7 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 raise Exception("GEMINI_API_KEY not configured")
                 
             # Prepare input payload
-            input_payload = json.dumps(remaining_reviews)
+            input_payload = json.dumps([{"id": i, "text": rev} for i, rev in enumerate(remaining_reviews)])
             
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
             data = {
@@ -510,17 +513,17 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 raise Exception("Gemini API did not return a JSON list")
                 
             # Iterate and match
-            parsed_items_by_review = {}
+            parsed_items_by_id = {}
             for item in parsed_list:
-                orig = item.get("originalReview")
-                if orig:
-                    if orig not in parsed_items_by_review:
-                        parsed_items_by_review[orig] = []
-                    parsed_items_by_review[orig].append(item)
+                item_id = item.get("id")
+                if item_id is not None:
+                    if item_id not in parsed_items_by_id:
+                        parsed_items_by_id[item_id] = []
+                    parsed_items_by_id[item_id].append(item)
 
-            for review in remaining_reviews:
+            for i, review in enumerate(remaining_reviews):
                 try:
-                    items_for_review = parsed_items_by_review.get(review, [])
+                    items_for_review = parsed_items_by_id.get(i, [])
                     if not items_for_review:
                         raise Exception("No matching classification in batch response")
                         
