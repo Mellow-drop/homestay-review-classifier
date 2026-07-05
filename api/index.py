@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, desc
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, desc, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship, Session
 import urllib.request
 import urllib.error
@@ -77,6 +77,8 @@ class ClassifiedReviewModel(Base):
     theme = Column(String(50), nullable=False)
     suggested_response = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    urgency_level = Column(String(20), default='low', nullable=False)
+    needs_escalation = Column(Boolean, default=False, nullable=False)
 
     session = relationship("SessionModel", back_populates="reviews")
 
@@ -134,12 +136,15 @@ def global_exception_handler(request, exc):
 class ClassifyRequest(BaseModel):
     reviews: List[str] = Field(..., min_items=1, description="List of review strings to analyze")
     sessionName: Optional[str] = Field(None, description="Optional name for the classification session")
+    brandVoice: Optional[str] = Field(None, description="Optional brand voice instructions for the AI")
 
 class ReviewResponse(BaseModel):
     originalReview: str
     sentiment: str
     theme: str
     suggestedResponse: str
+    urgencyLevel: str = Field(default="low")
+    needsEscalation: bool = Field(default=False)
 
 class ClassifyResponse(BaseModel):
     sessionId: int
@@ -170,6 +175,8 @@ class ReviewUpdate(BaseModel):
     sentiment: Optional[str] = None
     theme: Optional[str] = None
     suggestedResponse: Optional[str] = None
+    urgencyLevel: Optional[str] = None
+    needsEscalation: Optional[bool] = None
 
 class SearchReviewResponse(BaseModel):
     id: int
@@ -179,6 +186,8 @@ class SearchReviewResponse(BaseModel):
     sentiment: str
     theme: str
     suggestedResponse: str
+    urgencyLevel: str
+    needsEscalation: bool
     createdAt: datetime.datetime
 
     class Config:
@@ -365,7 +374,9 @@ def local_classify(review: str) -> dict:
     return {
         "sentiment": sentiment,
         "theme": theme,
-        "response": response
+        "response": response,
+        "urgency_level": "low",
+        "needs_escalation": False
     }
 
 @app.post("/api/classify", response_model=ClassifyResponse)
@@ -403,7 +414,9 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 original_review=review,
                 sentiment=mock_data["sentiment"],
                 theme=mock_data["theme"],
-                suggested_response=mock_data["response"]
+                suggested_response=mock_data["response"],
+                urgency_level=mock_data.get("urgency_level", "low"),
+                needs_escalation=mock_data.get("needs_escalation", False)
             )
             classified_reviews.append(db_review)
             mocked_reviews_indices[review] = db_review
@@ -412,14 +425,20 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
 
     # 3. Classify remaining reviews using Gemini API in a single batch prompt if any exist
     if remaining_reviews:
+        brand_voice_prompt = f"\n\nWrite responses in this specific brand voice: '{request.brandVoice}'\n\n" if request.brandVoice else "\n\n"
+        
         system_instruction = (
-            "You are an expert hospitality analyst. Classify guest reviews with precision.\n"
-            "You will receive a JSON list of review strings. You must analyze each review and return a JSON list of objects, "
-            "where each object in the output list corresponds to the input review at the same index.\n"
+            "You are an expert hospitality analyst. Classify guest reviews with precision."
+            f"{brand_voice_prompt}"
+            "You will receive a JSON list of review strings. You must return a JSON array containing one or more classification objects for EVERY input review.\n"
+            "If a single review mentions multiple themes (e.g. food and cleanliness), you MUST return multiple separate objects for that same review, each with its own theme and sentiment.\n"
             "Each object must contain these exact fields:\n"
+            "- originalReview: The exact string of the input review you are classifying.\n"
             "- sentiment: one of \"positive\", \"neutral\", or \"negative\"\n"
             "- theme: one of \"food\", \"host\", \"location\", \"cleanliness\", \"value\", or \"experience\"\n"
-            "- response: a one-line suggested management response (professional, empathetic, 15-25 words)\n\n"
+            "- response: a one-line suggested management response (professional, empathetic, 15-25 words)\n"
+            "- urgencyLevel: \"low\", \"medium\", or \"high\" (high for severe complaints or safety issues)\n"
+            "- needsEscalation: true or false (true only if urgencyLevel is high)\n\n"
             "Guidelines for Themes:\n"
             "- 'food': references to meals, breakfast, dining, dishes, ingredients.\n"
             "- 'host': references to staff, owners, hospitality, service, check-in, check-out interactions, friendliness, or helpfulness.\n"
@@ -435,8 +454,8 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
             "[\"The food was great!\", \"Room was dirty.\"]\n"
             "Example Output:\n"
             "[\n"
-            "  {\"sentiment\":\"positive\",\"theme\":\"food\",\"response\":\"We're so glad you enjoyed our breakfast! Hope to see you again soon.\"},\n"
-            "  {\"sentiment\":\"negative\",\"theme\":\"cleanliness\",\"response\":\"We apologize for the room condition and have addressed this with our cleaning staff.\"}\n"
+            "  {\"originalReview\":\"The food was great!\",\"sentiment\":\"positive\",\"theme\":\"food\",\"response\":\"We're so glad you enjoyed our breakfast! Hope to see you again soon.\",\"urgencyLevel\":\"low\",\"needsEscalation\":false},\n"
+            "  {\"originalReview\":\"Room was dirty.\",\"sentiment\":\"negative\",\"theme\":\"cleanliness\",\"response\":\"We apologize for the room condition and have addressed this with our cleaning staff.\",\"urgencyLevel\":\"medium\",\"needsEscalation\":false}\n"
             "]"
         )
 
@@ -491,39 +510,53 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 raise Exception("Gemini API did not return a JSON list")
                 
             # Iterate and match
-            for i, review in enumerate(remaining_reviews):
+            parsed_items_by_review = {}
+            for item in parsed_list:
+                orig = item.get("originalReview")
+                if orig:
+                    if orig not in parsed_items_by_review:
+                        parsed_items_by_review[orig] = []
+                    parsed_items_by_review[orig].append(item)
+
+            for review in remaining_reviews:
                 try:
-                    if i >= len(parsed_list):
+                    items_for_review = parsed_items_by_review.get(review, [])
+                    if not items_for_review:
                         raise Exception("No matching classification in batch response")
                         
-                    parsed_item = parsed_list[i]
-                    sentiment = parsed_item.get("sentiment")
-                    theme = parsed_item.get("theme")
-                    suggested_resp = parsed_item.get("response")
+                    for parsed_item in items_for_review:
+                        sentiment = parsed_item.get("sentiment")
+                        theme = parsed_item.get("theme")
+                        suggested_resp = parsed_item.get("response")
+                        urg_level = parsed_item.get("urgencyLevel", "low")
+                        escalation = parsed_item.get("needsEscalation", False)
+                        
+                        if sentiment not in ["positive", "neutral", "negative"] or \
+                           theme not in ["food", "host", "location", "cleanliness", "value", "experience"] or \
+                           not suggested_resp:
+                            raise Exception("Invalid fields in batch item, triggering fallback")
 
-                    # Validate
-                    if sentiment not in ["positive", "neutral", "negative"] or \
-                       theme not in ["food", "host", "location", "cleanliness", "value", "experience"] or \
-                       not suggested_resp:
-                        raise Exception("Invalid fields in batch item, triggering fallback")
-
-                    db_review = ClassifiedReviewModel(
-                        session_id=db_session.id,
-                        original_review=review,
-                        sentiment=sentiment,
-                        theme=theme,
-                        suggested_response=suggested_resp
-                    )
-                    classified_reviews.append(db_review)
+                        db_review = ClassifiedReviewModel(
+                            session_id=db_session.id,
+                            original_review=review,
+                            sentiment=sentiment,
+                            theme=theme,
+                            suggested_response=suggested_resp,
+                            urgency_level=urg_level,
+                            needs_escalation=escalation
+                        )
+                        classified_reviews.append(db_review)
                 except Exception as item_err:
-                    logger.warning(f"Error parsing batch item index {i}, falling back to local heuristic: {item_err}")
+                    logger.warning(f"Error parsing batch items for review, falling back to local heuristic: {item_err}")
                     local_res = local_classify(review)
                     db_review = ClassifiedReviewModel(
                         session_id=db_session.id,
                         original_review=review,
                         sentiment=local_res["sentiment"],
                         theme=local_res["theme"],
-                        suggested_response=local_res["response"]
+                        suggested_response=local_res["response"],
+                        urgency_level=local_res["urgency_level"],
+                        needs_escalation=local_res["needs_escalation"]
                     )
                     classified_reviews.append(db_review)
 
@@ -538,7 +571,9 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                         original_review=review,
                         sentiment=local_res["sentiment"],
                         theme=local_res["theme"],
-                        suggested_response=local_res["response"]
+                        suggested_response=local_res["response"],
+                        urgency_level=local_res["urgency_level"],
+                        needs_escalation=local_res["needs_escalation"]
                     )
                     classified_reviews.append(db_review)
                 except Exception as fe:
@@ -555,25 +590,19 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
             logger.error(f"Error saving classified reviews to DB: {e}")
             errors.append({"index": -1, "review": "DB Write Batch", "error": f"Failed to save classifications: {str(e)}"})
 
-    # Prepare response data matching the input list size and order
-    success_map = {r.original_review: r for r in classified_reviews}
+    # Prepare response data matching the input list order
     final_classifications = []
-    for r_text in reviews:
-        if r_text in success_map:
-            match = success_map[r_text]
-            final_classifications.append(ReviewResponse(
-                originalReview=match.original_review,
-                sentiment=match.sentiment,
-                theme=match.theme,
-                suggestedResponse=match.suggested_response
-            ))
-        else:
-            final_classifications.append(ReviewResponse(
-                originalReview=r_text,
-                sentiment="neutral",
-                theme="experience",
-                suggestedResponse="Thank you for your feedback. We hope to serve you better in the future."
-            ))
+    
+    # We use the generated rows, which now could be multiple rows per review string.
+    for r in classified_reviews:
+        final_classifications.append(ReviewResponse(
+            originalReview=r.original_review,
+            sentiment=r.sentiment,
+            theme=r.theme,
+            suggestedResponse=r.suggested_response,
+            urgencyLevel=r.urgency_level,
+            needsEscalation=r.needs_escalation
+        ))
 
     return ClassifyResponse(
         sessionId=db_session.id,

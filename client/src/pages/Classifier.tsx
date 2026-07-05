@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button, Modal, Toast, Loader } from "@/components/ui";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Copy, Download, AlertCircle, CheckCircle2, History, ChevronUp, ChevronDown, ListFilter, ArrowLeft, TreePine } from "lucide-react";
+import { Copy, Download, AlertCircle, CheckCircle2, History, ChevronUp, ChevronDown, ListFilter, ArrowLeft, TreePine, AlertTriangle, Plus, X } from "lucide-react";
 import { Link } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -26,6 +26,8 @@ type ClassificationResult = {
   sentiment: "positive" | "neutral" | "negative";
   theme: "food" | "host" | "location" | "cleanliness" | "value" | "experience";
   suggestedResponse: string;
+  urgencyLevel?: string;
+  needsEscalation?: boolean;
 };
 
 type ReviewProgress = {
@@ -55,22 +57,26 @@ const PRESETS = [
   {
     label: "👤 Welcoming Host",
     text: "The host was incredibly welcoming and made us feel right at home. Amazing experience!",
-    session: "Demo - Welcoming Host"
+    session: "Demo - Welcoming Host",
+    brandVoice: "Warm and inviting, like a family-run bed and breakfast."
   },
   {
     label: "🍽️ Delicious Food",
     text: "The breakfast was delicious with fresh local ingredients. Highly recommend!",
-    session: "Demo - Fresh Breakfast"
+    session: "Demo - Fresh Breakfast",
+    brandVoice: "Enthusiastic and proud, like a passionate local chef."
   },
   {
     label: "✨ Dirty Room/Bathroom",
     text: "The bathroom was dirty and the room smelled bad. Very disappointed.",
-    session: "Demo - Cleanliness Issues"
+    session: "Demo - Cleanliness Issues",
+    brandVoice: "Deeply apologetic and professional, ensuring strict quality control."
   },
   {
     label: "📍 Noisy Location",
     text: "Located in a noisy area far from attractions. Very inconvenient location.",
-    session: "Demo - Location Issues"
+    session: "Demo - Location Issues",
+    brandVoice: "Empathetic and practical, offering solutions for future stays."
   }
 ];
 
@@ -82,16 +88,41 @@ export default function Classifier() {
   const [sortColumn, setSortColumn] = useState<keyof ClassificationResult | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sessionName, setSessionName] = useState("");
+  const [brandVoice, setBrandVoice] = useState("Professional and polite hospitality tone");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
+  const [savedVoices, setSavedVoices] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('savedBrandVoices');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('savedBrandVoices', JSON.stringify(savedVoices));
+  }, [savedVoices]);
+
+  const handleSaveVoice = () => {
+    if (brandVoice.trim() && !savedVoices.includes(brandVoice)) {
+      setSavedVoices(prev => [...prev, brandVoice]);
+      Toast.success("Brand voice saved");
+    }
+  };
+
+  const handleRemoveVoice = (index: number) => {
+    setSavedVoices(prev => prev.filter((_, i) => i !== index));
+  };
+  
   const queryClient = useQueryClient();
 
   const classifyMutation = useMutation({
-    mutationFn: async (variables: { reviews: string[]; sessionName?: string }) => {
+    mutationFn: async (variables: { reviews: string[]; sessionName?: string; brandVoice?: string }) => {
       const response = await axios.post("/api/classify", variables);
       return response.data;
     },
@@ -163,6 +194,7 @@ export default function Classifier() {
     classifyMutation.mutate({
       reviews,
       sessionName: sessionName || undefined,
+      brandVoice: brandVoice || undefined,
     });
   };
 
@@ -176,6 +208,7 @@ export default function Classifier() {
   const applyPreset = (preset: typeof PRESETS[0]) => {
     setReviewInput(preset.text);
     setSessionName(preset.session);
+    setBrandVoice(preset.brandVoice);
     Toast.info(`Filled with preset review: ${preset.label}`);
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -188,12 +221,14 @@ export default function Classifier() {
       return;
     }
 
-    const headers = ["Review", "Sentiment", "Theme", "Suggested Response"];
+    const headers = ["Review", "Sentiment", "Theme", "Suggested Response", "Urgency", "Escalate"];
     const rows = results.map((r) => [
       `"${r.originalReview.replace(/"/g, '""')}"`,
       r.sentiment,
       r.theme,
       `"${r.suggestedResponse.replace(/"/g, '""')}"`,
+      r.urgencyLevel || "",
+      r.needsEscalation || false,
     ]);
 
     const csv = [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -250,6 +285,39 @@ export default function Classifier() {
           onChange={(e) => setSessionName(e.target.value)}
           className="w-full rounded-xl border border-slate-200/80 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 px-4 py-2.5 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:border-slate-400 dark:focus:border-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300/30 text-slate-900 dark:text-white"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Custom Brand Voice (Optional)</label>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="e.g., Formal luxury resort, or laid-back surfer hostel"
+            value={brandVoice}
+            onChange={(e) => setBrandVoice(e.target.value)}
+            className="w-full rounded-xl border border-slate-200/80 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 px-4 py-2.5 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:border-slate-400 dark:focus:border-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300/30 text-slate-900 dark:text-white"
+          />
+          <button 
+            type="button"
+            onClick={handleSaveVoice}
+            className="absolute right-2 top-2 p-1 text-slate-400 hover:text-emerald-500 transition-colors bg-white dark:bg-slate-950/40 rounded-lg"
+            title="Save this brand voice"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+        {savedVoices.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {savedVoices.map((voice, idx) => (
+              <div key={idx} className="group flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                <span onClick={() => setBrandVoice(voice)} className="truncate max-w-[200px]" title={voice}>
+                  {voice}
+                </span>
+                <X className="h-3 w-3 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-opacity" onClick={(e) => { e.stopPropagation(); handleRemoveVoice(idx); }} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -420,6 +488,39 @@ export default function Classifier() {
                       </div>
 
                       <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Custom Brand Voice (Optional)</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="e.g., Formal luxury resort, or laid-back surfer hostel"
+                            value={brandVoice}
+                            onChange={(e) => setBrandVoice(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200/80 dark:border-slate-800/85 bg-white dark:bg-slate-950/40 px-4 py-2.5 text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:border-slate-400 dark:focus:border-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300/30 text-slate-900 dark:text-white"
+                          />
+                          <button 
+                            type="button"
+                            onClick={handleSaveVoice}
+                            className="absolute right-2 top-2 p-1 text-slate-400 hover:text-emerald-500 transition-colors bg-white dark:bg-slate-950/40 rounded-lg"
+                            title="Save this brand voice"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {savedVoices.length > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {savedVoices.map((voice, idx) => (
+                              <div key={idx} className="group flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                                <span onClick={() => setBrandVoice(voice)} className="truncate max-w-[200px]" title={voice}>
+                                  {voice}
+                                </span>
+                                <X className="h-3 w-3 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-opacity" onClick={(e) => { e.stopPropagation(); handleRemoveVoice(idx); }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Guest Reviews</label>
                         <Textarea
                           ref={textareaRef}
@@ -521,6 +622,7 @@ export default function Classifier() {
                           >
                             Theme {sortColumn === "theme" && (sortOrder === "asc" ? <ChevronUp className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" /> : <ChevronDown className="inline h-3.5 w-3.5 ml-1 text-slate-800 dark:text-white" />)}
                           </TableHead>
+                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[320px]">Suggested Reply</TableHead>
                           <TableHead className="w-16 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
                         </TableRow>
@@ -541,6 +643,25 @@ export default function Classifier() {
                                 <span>{themeIcons[result.theme]}</span>
                                 <span className="capitalize">{result.theme}</span>
                               </span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              {result.urgencyLevel && (
+                                <div className="flex flex-col gap-1 items-start">
+                                  <Badge className={`${
+                                    result.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
+                                    result.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
+                                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  } font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
+                                    {result.urgencyLevel}
+                                  </Badge>
+                                  {result.needsEscalation && (
+                                    <span className="flex items-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                                      <AlertTriangle className="h-3 w-3 mr-1" />
+                                      Escalate
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed py-4 pr-6 italic whitespace-pre-wrap">
                               "{result.suggestedResponse}"

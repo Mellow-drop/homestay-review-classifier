@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2, Download, Search, LayoutList, Wand2, Save, X } from "lucide-react";
+import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2, Download, Search, LayoutList, Wand2, Save, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +51,8 @@ interface ClassifiedReview {
   sentiment: "positive" | "neutral" | "negative";
   theme: "food" | "host" | "location" | "cleanliness" | "value" | "experience";
   suggestedResponse: string;
+  urgencyLevel: string;
+  needsEscalation: boolean;
 }
 
 export default function SessionHistory() {
@@ -140,12 +142,12 @@ export default function SessionHistory() {
       const response = await axios.get(`/api/sessions/${session.id}`);
       const reviews = response.data.reviews;
       
-      let csvContent = "Review,Sentiment,Theme,Suggested Response\n";
+      let csvContent = "Review,Sentiment,Theme,Suggested Response,Urgency,Escalate\n";
       reviews.forEach((r: ClassifiedReview) => {
         // Escape quotes and wrap in quotes for CSV
         const safeReview = `"${r.originalReview.replace(/"/g, '""')}"`;
         const safeResponse = `"${r.suggestedResponse.replace(/"/g, '""')}"`;
-        csvContent += `${safeReview},${r.sentiment},${r.theme},${safeResponse}\n`;
+        csvContent += `${safeReview},${r.sentiment},${r.theme},${safeResponse},${r.urgencyLevel},${r.needsEscalation}\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -362,6 +364,7 @@ export default function SessionHistory() {
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Sentiment</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-36">Theme Tag</TableHead>
+                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[320px]">Suggested Management Reply</TableHead>
                           <TableHead className="w-24 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
                         </TableRow>
@@ -410,6 +413,25 @@ export default function SessionHistory() {
                                 </span>
                               )}
                             </TableCell>
+                            <TableCell className="py-4">
+                                {review.urgencyLevel && (
+                                  <div className="flex flex-col gap-1 items-start">
+                                    <Badge className={`${
+                                      review.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
+                                      review.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
+                                      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    } font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
+                                      {review.urgencyLevel}
+                                    </Badge>
+                                    {review.needsEscalation && (
+                                      <span className="flex items-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                                        <AlertTriangle className="h-3 w-3 mr-1" />
+                                        Escalate
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </TableCell>
                             <TableCell className="py-4 pr-6">
                               {editingReviewId === review.id ? (
                                 <textarea 
@@ -546,6 +568,7 @@ export default function SessionHistory() {
                     <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
                     <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-28">Sentiment</TableHead>
                     <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Theme Tag</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -567,6 +590,25 @@ export default function SessionHistory() {
                           <span>{themeIcons[review.theme as keyof typeof themeIcons]}</span>
                           <span className="capitalize">{review.theme}</span>
                         </span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {review.urgencyLevel && (
+                          <div className="flex flex-col gap-1 items-start">
+                            <Badge className={`${
+                              review.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
+                              review.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
+                              'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            } font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
+                              {review.urgencyLevel}
+                            </Badge>
+                            {review.needsEscalation && (
+                              <span className="flex items-center text-[10px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Escalate
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
