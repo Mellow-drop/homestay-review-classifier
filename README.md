@@ -64,7 +64,7 @@ We chose **PostgreSQL (via Supabase)** as our primary database over MongoDB. Sin
 
 ### Schema Diagram
 
-![Database Schema Diagram](./W5_SchemaDiagram_TBI-26101025.png)
+![Database Schema Diagram](./database_schema.png)
 
 ### Set up the database
 1. Go to [Supabase](https://supabase.com), create a free project.
