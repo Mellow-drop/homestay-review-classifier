@@ -526,6 +526,16 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 raise Exception("Empty response from Gemini API")
                 
             # Parse output list
+            # Remove markdown JSON wrappers if present
+            content = content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
             parsed_list = json.loads(content)
             if not isinstance(parsed_list, list):
                 raise Exception("Gemini API did not return a JSON list")
