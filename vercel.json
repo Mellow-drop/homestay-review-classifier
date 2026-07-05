@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    }
+  ],
+  "functions": {
+    "api/index.py": {
+      "excludeFiles": "{node_modules/**,client/node_modules/**,dist/**,client/dist/**,attached_assets/**}"
+    }
+  }
+}
