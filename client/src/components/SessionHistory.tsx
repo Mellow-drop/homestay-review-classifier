@@ -537,7 +537,7 @@ export default function SessionHistory() {
       </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm items-center">
+          <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm sm:items-center">
             <div className="flex items-center gap-2">
               <Search className="h-5 w-5 text-slate-400" />
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Filters:</span>
