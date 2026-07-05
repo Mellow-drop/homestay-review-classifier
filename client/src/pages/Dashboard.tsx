@@ -6,7 +6,8 @@ import { TrendingUp, Users, Award, AlertCircle, MessageSquare, Clock } from "luc
 import { Spinner } from "@/components/ui/spinner";
 import { 
   PieChart, Pie, Cell, 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, CartesianGrid
 } from "recharts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -28,10 +29,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-lg">
-        <p className="text-sm font-bold text-slate-900 dark:text-white">{label || payload[0].name}</p>
-        <p className="text-sm font-medium" style={{ color: payload[0].payload.color || payload[0].fill }}>
-          {payload[0].value} {payload[0].value === 1 ? 'mention' : 'mentions'}
-        </p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{label || payload[0].name}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm font-medium" style={{ color: entry.color || entry.payload.color || entry.fill }}>
+            {entry.name}: {entry.value} {entry.name && !entry.name.includes(":") ? (entry.value === 1 ? 'review' : 'reviews') : ''}
+          </p>
+        ))}
       </div>
     );
   }
@@ -72,6 +75,19 @@ export default function Dashboard() {
   const themeData = Object.entries(themeCounts)
     .map(([name, count]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), count }))
     .sort((a, b) => b.count - a.count);
+
+  // Timeline Data Preparation
+  const timelineMap = reviews?.reduce((acc, curr) => {
+    const date = new Date(curr.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    if (!acc[date]) {
+      acc[date] = { date, positive: 0, neutral: 0, negative: 0, total: 0 };
+    }
+    acc[date][curr.sentiment] += 1;
+    acc[date].total += 1;
+    return acc;
+  }, {} as Record<string, { date: string; positive: number; neutral: number; negative: number; total: number }>) || {};
+  
+  const timelineData = Object.values(timelineMap).reverse();
 
   const stats = [
     { label: "Total Reviews Classified", value: totalReviews.toLocaleString(), change: "All time data", icon: <Users className="h-5 w-5 text-blue-500" /> },
@@ -182,6 +198,28 @@ export default function Dashboard() {
                     <div className="flex-grow flex items-center justify-center text-slate-400 text-sm">No data available</div>
                   )}
                 </div>
+              </div>
+
+              {/* Sentiment Timeline Chart */}
+              <div className="mt-6 rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Sentiment Over Time</h3>
+                {timelineData.length > 0 ? (
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={timelineData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="positive" name="Positive" stroke={SENTIMENT_COLORS.positive} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="neutral" name="Neutral" stroke={SENTIMENT_COLORS.neutral} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="negative" name="Negative" stroke={SENTIMENT_COLORS.negative} strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex-grow flex items-center justify-center text-slate-400 text-sm">No data available</div>
+                )}
               </div>
 
               {/* Recent Activity */}

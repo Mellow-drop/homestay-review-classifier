@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2 } from "lucide-react";
+import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2, Download, Search, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -58,6 +58,13 @@ export default function SessionHistory() {
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
+  
+  // Premium Feature States
+  const [viewMode, setViewMode] = useState<"sessions" | "all">("sessions");
+  const [filterSentiment, setFilterSentiment] = useState<string>("all");
+  const [filterTheme, setFilterTheme] = useState<string>("all");
+  const [isDownloading, setIsDownloading] = useState<number | null>(null);
+
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -97,6 +104,46 @@ export default function SessionHistory() {
     },
     enabled: expandedSession !== null,
   });
+
+  const allReviewsQuery = useQuery({
+    queryKey: ["all-reviews-history"],
+    queryFn: async () => {
+      const response = await axios.get("/api/reviews/search");
+      return response.data;
+    },
+    enabled: viewMode === "all",
+  });
+
+  const handleDownloadCSV = async (session: SessionBrief) => {
+    try {
+      setIsDownloading(session.id);
+      const response = await axios.get(`/api/sessions/${session.id}`);
+      const reviews = response.data.reviews;
+      
+      let csvContent = "Review,Sentiment,Theme,Suggested Response\n";
+      reviews.forEach((r: ClassifiedReview) => {
+        // Escape quotes and wrap in quotes for CSV
+        const safeReview = `"${r.originalReview.replace(/"/g, '""')}"`;
+        const safeResponse = `"${r.suggestedResponse.replace(/"/g, '""')}"`;
+        csvContent += `${safeReview},${r.sentiment},${r.theme},${safeResponse}\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `session-${session.id}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("CSV Downloaded successfully");
+    } catch (error) {
+      toast.error("Failed to download CSV");
+    } finally {
+      setIsDownloading(null);
+    }
+  };
 
   const handleCopyResponse = (sessionId: number, reviewId: number, response: string) => {
     navigator.clipboard.writeText(response);
@@ -158,9 +205,25 @@ export default function SessionHistory() {
             </p>
           </div>
         </div>
+        <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
+          <Button 
+            variant={viewMode === "sessions" ? "secondary" : "ghost"} 
+            className={`h-9 px-4 rounded-lg text-sm font-semibold transition-all ${viewMode === "sessions" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-500"}`}
+            onClick={() => setViewMode("sessions")}
+          >
+            <History className="h-4 w-4 mr-2" /> By Session
+          </Button>
+          <Button 
+            variant={viewMode === "all" ? "secondary" : "ghost"} 
+            className={`h-9 px-4 rounded-lg text-sm font-semibold transition-all ${viewMode === "all" ? "bg-white dark:bg-slate-800 shadow-sm text-slate-900 dark:text-white" : "text-slate-500"}`}
+            onClick={() => setViewMode("all")}
+          >
+            <LayoutList className="h-4 w-4 mr-2" /> All Reviews
+          </Button>
+        </div>
       </div>
 
-      {/* Session Cards List */}
+      {viewMode === "sessions" ? (
       <div className="space-y-5">
         {sessions.map((session: SessionBrief) => (
           <Card key={session.id} className="glass-card border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden rounded-2xl">
@@ -213,6 +276,9 @@ export default function SessionHistory() {
                         <Edit2 className="h-4 w-4" />
                       </Button>
                     )}
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600" onClick={() => handleDownloadCSV(session)} disabled={isDownloading === session.id}>
+                      {isDownloading === session.id ? <Spinner className="h-4 w-4 text-blue-500" /> : <Download className="h-4 w-4" />}
+                    </Button>
                     <Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-600" onClick={() => deleteMutation.mutate(session.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -296,6 +362,90 @@ export default function SessionHistory() {
           </Card>
         ))}
       </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm items-center">
+            <div className="flex items-center gap-2">
+              <Search className="h-5 w-5 text-slate-400" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Filters:</span>
+            </div>
+            <select 
+              value={filterSentiment} 
+              onChange={(e) => setFilterSentiment(e.target.value)}
+              className="h-9 px-3 rounded-lg text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              <option value="all">All Sentiments</option>
+              <option value="positive">Positive</option>
+              <option value="neutral">Neutral</option>
+              <option value="negative">Negative</option>
+            </select>
+            <select 
+              value={filterTheme} 
+              onChange={(e) => setFilterTheme(e.target.value)}
+              className="h-9 px-3 rounded-lg text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              <option value="all">All Themes</option>
+              <option value="food">Food</option>
+              <option value="host">Host</option>
+              <option value="location">Location</option>
+              <option value="cleanliness">Cleanliness</option>
+              <option value="value">Value</option>
+              <option value="experience">Experience</option>
+            </select>
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30">
+            {allReviewsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Spinner className="h-8 w-8 text-emerald-500" />
+              </div>
+            ) : allReviewsQuery.isError ? (
+              <div className="py-20 text-center text-rose-500 text-sm font-medium">Failed to load reviews</div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
+                  <TableRow className="border-slate-200/80 dark:border-slate-800/80 hover:bg-transparent">
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-28">Sentiment</TableHead>
+                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Theme Tag</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allReviewsQuery.data
+                    ?.filter((r: any) => filterSentiment === "all" || r.sentiment === filterSentiment)
+                    .filter((r: any) => filterTheme === "all" || r.theme === filterTheme)
+                    .map((review: ClassifiedReview, idx: number) => (
+                    <TableRow key={idx} className="border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-100/30 dark:hover:bg-slate-500/5 transition-colors duration-150">
+                      <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pr-6 leading-relaxed whitespace-pre-wrap">
+                        {review.originalReview}
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge className={`${sentimentColors[review.sentiment] || sentimentColors.neutral} font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
+                          {review.sentiment}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
+                          <span>{themeIcons[review.theme as keyof typeof themeIcons]}</span>
+                          <span className="capitalize">{review.theme}</span>
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {allReviewsQuery.data?.filter((r: any) => filterSentiment === "all" || r.sentiment === filterSentiment)
+                    .filter((r: any) => filterTheme === "all" || r.theme === filterTheme).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-10 text-slate-500 font-medium">
+                        No reviews match your filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
