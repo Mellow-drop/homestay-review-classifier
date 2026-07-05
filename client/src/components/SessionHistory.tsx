@@ -72,7 +72,7 @@ export default function SessionHistory() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, name }: { id: number, name: string }) => {
-      await axios.patch(`/api/sessions/${id}`, { session_name: name });
+      await axios.patch(`/api/sessions/${id}`, { sessionName: name });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
