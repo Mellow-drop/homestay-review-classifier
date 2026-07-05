@@ -64,25 +64,7 @@ We chose **PostgreSQL (via Supabase)** as our primary database over MongoDB. Sin
 
 ### Schema Diagram
 
-```mermaid
-erDiagram
-    SESSIONS ||--o{ CLASSIFIED_REVIEWS : "has many"
-    SESSIONS {
-        int id PK
-        string session_name
-        int total_reviews
-        datetime created_at
-    }
-    CLASSIFIED_REVIEWS {
-        int id PK
-        int session_id FK
-        text original_review
-        string sentiment
-        string theme
-        text suggested_response
-        datetime created_at
-    }
-```
+![Database Schema Diagram](./W5_SchemaDiagram_TBI-26101025.png)
 
 ### Set up the database
 1. Go to [Supabase](https://supabase.com), create a free project.
