@@ -24,7 +24,7 @@ import SessionHistory from "@/components/SessionHistory";
 type ClassificationResult = {
   originalReview: string;
   sentiment: "positive" | "neutral" | "negative";
-  theme: "food" | "host" | "location" | "cleanliness" | "value" | "experience";
+  theme: string;
   suggestedResponse: string;
   urgencyLevel?: string;
   needsEscalation?: boolean;
@@ -225,7 +225,7 @@ export default function Classifier() {
     const rows = results.map((r) => [
       `"${r.originalReview.replace(/"/g, '""')}"`,
       r.sentiment,
-      r.theme,
+      `"${(r.theme || "").replace(/"/g, '""')}"`,
       `"${r.suggestedResponse.replace(/"/g, '""')}"`,
       r.urgencyLevel || "",
       r.needsEscalation || false,

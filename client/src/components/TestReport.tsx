@@ -180,7 +180,7 @@ export default function TestReport() {
           actualTheme: classification?.theme,
           actualResponse: classification?.suggestedResponse,
           sentimentMatch: classification?.sentiment === testReview.expectedSentiment,
-          themeMatch: classification?.theme === testReview.expectedTheme,
+          themeMatch: classification?.theme?.includes(testReview.expectedTheme),
         };
       });
 

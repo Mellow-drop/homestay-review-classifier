@@ -336,27 +336,27 @@ export default function SessionHistory() {
                   </div>
                 ) : sessionDetailsQuery.data && expandedSession === session.id ? (
                   <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                      <div>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/30 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                      <div className="flex items-center justify-between mb-3">
                         <h4 className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                          <Wand2 className="h-4 w-4" /> AI Executive Summary
+                          <Wand2 className="h-4.5 w-4.5" /> AI Executive Summary
                         </h4>
-                        <p className="text-sm text-emerald-600/80 dark:text-emerald-400/80 mt-1 max-w-2xl leading-relaxed">
-                          {summaryData[session.id] 
-                            ? summaryData[session.id]
-                            : "Generate a 1-paragraph summary of these reviews using Google Gemini."}
-                        </p>
+                        {!summaryData[session.id] && (
+                          <Button 
+                            onClick={() => handleGenerateSummary(session.id)}
+                            disabled={isGeneratingSummary[session.id]}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shrink-0 h-8 text-xs px-3"
+                          >
+                            {isGeneratingSummary[session.id] ? <Spinner className="h-3.5 w-3.5 mr-1.5" /> : <Wand2 className="h-3.5 w-3.5 mr-1.5" />}
+                            Generate
+                          </Button>
+                        )}
                       </div>
-                      {!summaryData[session.id] && (
-                        <Button 
-                          onClick={() => handleGenerateSummary(session.id)}
-                          disabled={isGeneratingSummary[session.id]}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shrink-0"
-                        >
-                          {isGeneratingSummary[session.id] ? <Spinner className="h-4 w-4 mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                          Generate
-                        </Button>
-                      )}
+                      <div className={`text-sm leading-relaxed ${summaryData[session.id] ? "text-emerald-950 dark:text-emerald-50 font-medium italic border-l-2 border-emerald-400 pl-4 py-1" : "text-emerald-600/80 dark:text-emerald-400/80"}`}>
+                        {summaryData[session.id] 
+                          ? summaryData[session.id]
+                          : "Generate a 1-paragraph summary of these reviews using Google Gemini."}
+                      </div>
                     </div>
                     <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30">
                     <Table>
