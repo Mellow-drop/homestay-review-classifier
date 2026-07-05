@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2, Download, Search, LayoutList } from "lucide-react";
+import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2, Download, Search, LayoutList, Wand2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
@@ -65,6 +65,14 @@ export default function SessionHistory() {
   const [filterTheme, setFilterTheme] = useState<string>("all");
   const [isDownloading, setIsDownloading] = useState<number | null>(null);
 
+  // Advanced Feature States
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editSentiment, setEditSentiment] = useState<string>("");
+  const [editTheme, setEditTheme] = useState<string>("");
+  const [editResponse, setEditResponse] = useState<string>("");
+  const [summaryData, setSummaryData] = useState<{ [key: number]: string }>({});
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState<{ [key: number]: boolean }>({});
+
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
@@ -85,6 +93,18 @@ export default function SessionHistory() {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
       setEditingId(null);
       toast.success("Session renamed successfully");
+    }
+  });
+
+  const updateReviewMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: any }) => {
+      await axios.patch(`/api/reviews/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessionDetails"] });
+      queryClient.invalidateQueries({ queryKey: ["all-reviews-history"] });
+      setEditingReviewId(null);
+      toast.success("Review updated successfully");
     }
   });
 
@@ -142,6 +162,19 @@ export default function SessionHistory() {
       toast.error("Failed to download CSV");
     } finally {
       setIsDownloading(null);
+    }
+  };
+
+  const handleGenerateSummary = async (sessionId: number) => {
+    try {
+      setIsGeneratingSummary(prev => ({ ...prev, [sessionId]: true }));
+      const response = await axios.get(`/api/sessions/${sessionId}/summary`);
+      setSummaryData(prev => ({ ...prev, [sessionId]: response.data.summary }));
+      toast.success("Summary generated!");
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Failed to generate summary");
+    } finally {
+      setIsGeneratingSummary(prev => ({ ...prev, [sessionId]: false }));
     }
   };
 
@@ -299,15 +332,38 @@ export default function SessionHistory() {
                     <Spinner className="h-7 w-7 text-emerald-500" />
                   </div>
                 ) : sessionDetailsQuery.data && expandedSession === session.id ? (
-                  <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                      <div>
+                        <h4 className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                          <Wand2 className="h-4 w-4" /> AI Executive Summary
+                        </h4>
+                        <p className="text-sm text-emerald-600/80 dark:text-emerald-400/80 mt-1 max-w-2xl leading-relaxed">
+                          {summaryData[session.id] 
+                            ? summaryData[session.id]
+                            : "Generate a 1-paragraph summary of these reviews using Google Gemini."}
+                        </p>
+                      </div>
+                      {!summaryData[session.id] && (
+                        <Button 
+                          onClick={() => handleGenerateSummary(session.id)}
+                          disabled={isGeneratingSummary[session.id]}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shrink-0"
+                        >
+                          {isGeneratingSummary[session.id] ? <Spinner className="h-4 w-4 mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                          Generate
+                        </Button>
+                      )}
+                    </div>
+                    <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30">
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
                         <TableRow className="border-slate-200/80 dark:border-slate-800/80 hover:bg-transparent">
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-28">Sentiment</TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Theme Tag</TableHead>
+                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Sentiment</TableHead>
+                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-36">Theme Tag</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[320px]">Suggested Management Reply</TableHead>
-                          <TableHead className="w-16 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
+                          <TableHead className="w-24 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -317,44 +373,126 @@ export default function SessionHistory() {
                               {review.originalReview}
                             </TableCell>
                             <TableCell className="py-4">
-                              <Badge className={`${sentimentColors[review.sentiment] || sentimentColors.neutral} font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
-                                {review.sentiment}
-                              </Badge>
+                              {editingReviewId === review.id ? (
+                                <select 
+                                  value={editSentiment} 
+                                  onChange={(e) => setEditSentiment(e.target.value)}
+                                  className="h-8 px-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300"
+                                >
+                                  <option value="positive">Positive</option>
+                                  <option value="neutral">Neutral</option>
+                                  <option value="negative">Negative</option>
+                                </select>
+                              ) : (
+                                <Badge className={`${sentimentColors[review.sentiment] || sentimentColors.neutral} font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
+                                  {review.sentiment}
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="py-4">
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
-                                <span>{themeIcons[review.theme]}</span>
-                                <span className="capitalize">{review.theme}</span>
-                              </span>
+                              {editingReviewId === review.id ? (
+                                <select 
+                                  value={editTheme} 
+                                  onChange={(e) => setEditTheme(e.target.value)}
+                                  className="h-8 px-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300"
+                                >
+                                  <option value="food">Food</option>
+                                  <option value="host">Host</option>
+                                  <option value="location">Location</option>
+                                  <option value="cleanliness">Cleanliness</option>
+                                  <option value="value">Value</option>
+                                  <option value="experience">Experience</option>
+                                </select>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
+                                  <span>{themeIcons[review.theme as keyof typeof themeIcons]}</span>
+                                  <span className="capitalize">{review.theme}</span>
+                                </span>
+                              )}
                             </TableCell>
-                            <TableCell className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed py-4 pr-6 italic whitespace-pre-wrap">
-                              "{review.suggestedResponse}"
+                            <TableCell className="py-4 pr-6">
+                              {editingReviewId === review.id ? (
+                                <textarea 
+                                  value={editResponse}
+                                  onChange={(e) => setEditResponse(e.target.value)}
+                                  className="w-full min-h-[60px] p-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none text-slate-700 dark:text-slate-300 resize-y"
+                                />
+                              ) : (
+                                <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic whitespace-pre-wrap">
+                                  "{review.suggestedResponse}"
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell className="text-center py-4">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleCopyResponse(
-                                    session.id,
-                                    review.id,
-                                    review.suggestedResponse
-                                  )
-                                }
-                                className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-100"
-                                title="Copy response"
-                              >
-                                {copiedIndex === `${session.id}-${review.id}` ? (
-                                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              <div className="flex items-center justify-center gap-1">
+                                {editingReviewId === review.id ? (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => updateReviewMutation.mutate({ 
+                                        id: review.id, 
+                                        data: { sentiment: editSentiment, theme: editTheme, suggestedResponse: editResponse } 
+                                      })}
+                                      className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                                      title="Save"
+                                    >
+                                      {updateReviewMutation.isPending ? <Spinner className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => setEditingReviewId(null)}
+                                      className="h-8 w-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                      title="Cancel"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </>
                                 ) : (
-                                  <Copy className="h-4 w-4" />
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setEditingReviewId(review.id);
+                                        setEditSentiment(review.sentiment);
+                                        setEditTheme(review.theme);
+                                        setEditResponse(review.suggestedResponse);
+                                      }}
+                                      className="h-8 w-8 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                      title="Edit review"
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() =>
+                                        handleCopyResponse(
+                                          session.id,
+                                          review.id,
+                                          review.suggestedResponse
+                                        )
+                                      }
+                                      className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-slate-100"
+                                      title="Copy response"
+                                    >
+                                      {copiedIndex === `${session.id}-${review.id}` ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                      ) : (
+                                        <Copy className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </>
                                 )}
-                              </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
                   </div>
                 ) : null}
               </CollapsibleContent>

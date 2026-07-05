@@ -166,6 +166,11 @@ class SessionDetails(BaseModel):
 class SessionUpdate(BaseModel):
     sessionName: str = Field(..., min_length=1, max_length=255)
 
+class ReviewUpdate(BaseModel):
+    sentiment: Optional[str] = None
+    theme: Optional[str] = None
+    suggestedResponse: Optional[str] = None
+
 class SearchReviewResponse(BaseModel):
     id: int
     sessionId: int
@@ -708,3 +713,84 @@ def search_reviews(
     except Exception as e:
         logger.error(f"Error searching reviews: {e}")
         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
+
+@app.patch("/api/reviews/{review_id}")
+def update_review(review_id: int, review_update: ReviewUpdate, db: Session = Depends(get_db)):
+    try:
+        review_obj = db.query(ClassifiedReviewModel).filter(ClassifiedReviewModel.id == review_id).first()
+        if not review_obj:
+            raise HTTPException(status_code=404, detail="Review not found")
+        
+        if review_update.sentiment is not None:
+            review_obj.sentiment = review_update.sentiment
+        if review_update.theme is not None:
+            review_obj.theme = review_update.theme
+        if review_update.suggestedResponse is not None:
+            review_obj.suggested_response = review_update.suggestedResponse
+            
+        db.commit()
+        db.refresh(review_obj)
+        
+        return {"message": "Review updated successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating review {review_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
+
+@app.get("/api/sessions/{session_id}/summary")
+def generate_session_summary(session_id: int, db: Session = Depends(get_db)):
+    try:
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        if not session_obj:
+            raise HTTPException(status_code=404, detail="Session not found")
+            
+        if not gemini_key:
+            return {"summary": "Gemini API Key is not configured. Summary generation requires an active API key."}
+            
+        reviews = session_obj.reviews
+        if not reviews:
+            return {"summary": "No reviews found in this session to summarize."}
+            
+        # Format reviews for the prompt
+        review_text = "\n".join([f"- [{r.sentiment.upper()}] ({r.theme}): {r.original_review}" for r in reviews])
+        
+        prompt = (
+            "You are an expert hospitality consultant. Analyze the following classified reviews from a recent batch "
+            "and write a concise 1-paragraph executive summary for the business owner.\n"
+            "Highlight the general sentiment trend, point out what guests loved, and explicitly mention any "
+            "negative trends or complaints that need immediate attention. Be professional, direct, and actionable.\n\n"
+            "Reviews:\n"
+            f"{review_text}"
+        )
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+        data = {
+            "contents": [{"parts": [{"text": prompt}]}]
+        }
+        
+        req = urllib.request.Request(
+            url, 
+            data=json.dumps(data).encode('utf-8'), 
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        
+        try:
+            with urllib.request.urlopen(req) as response:
+                result = json.loads(response.read().decode())
+                summary_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                if not summary_text:
+                    raise ValueError("Empty response from Gemini API")
+                
+                return {"summary": summary_text.strip()}
+        except Exception as api_err:
+            logger.error(f"Gemini API error during summary: {api_err}")
+            raise HTTPException(status_code=502, detail="Failed to generate summary from AI provider.")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating summary for session {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")

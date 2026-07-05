@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { TrendingUp, Users, Award, AlertCircle, MessageSquare, Clock } from "lucide-react";
+import { TrendingUp, Users, Award, AlertCircle, MessageSquare, Clock, Cloud } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { 
   PieChart, Pie, Cell, 
@@ -88,6 +88,36 @@ export default function Dashboard() {
   }, {} as Record<string, { date: string; positive: number; neutral: number; negative: number; total: number }>) || {};
   
   const timelineData = Object.values(timelineMap).reverse();
+
+  // Word Cloud Data Preparation
+  const getWordCloudData = (revs: Review[]) => {
+    const stopWords = new Set(["the", "and", "a", "an", "is", "was", "it", "to", "of", "in", "for", "with", "on", "this", "that", "but", "very", "we", "our", "were", "my", "i", "they", "as", "at", "not", "so", "be", "have", "you", "are", "from", "it's", "had"]);
+    const wordCounts: { [key: string]: number } = {};
+    
+    revs.forEach(r => {
+      const words = r.originalReview.toLowerCase().replace(/[^\w\s]/gi, '').split(/\s+/);
+      words.forEach(w => {
+        if (w.length > 2 && !stopWords.has(w)) {
+          wordCounts[w] = (wordCounts[w] || 0) + 1;
+        }
+      });
+    });
+    
+    // Sort and take top 50, then shuffle for cloud effect
+    const sorted = Object.entries(wordCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 45)
+      .map(([word, count]) => ({ word, count }));
+      
+    // Randomize array in-place using Durstenfeld shuffle algorithm
+    for (let i = sorted.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sorted[i], sorted[j]] = [sorted[j], sorted[i]];
+    }
+    return sorted;
+  };
+
+  const wordCloudData = reviews ? getWordCloudData(reviews) : [];
 
   const stats = [
     { label: "Total Reviews Classified", value: totalReviews.toLocaleString(), change: "All time data", icon: <Users className="h-5 w-5 text-blue-500" /> },
@@ -219,6 +249,39 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="flex-grow flex items-center justify-center text-slate-400 text-sm">No data available</div>
+                )}
+              </div>
+
+              {/* Dynamic Word Cloud */}
+              <div className="mt-6 rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
+                <div className="flex items-center gap-2 mb-6">
+                  <Cloud className="h-5 w-5 text-indigo-500" />
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Review Word Cloud</h3>
+                </div>
+                {wordCloudData.length > 0 ? (
+                  <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 py-4 px-2 min-h-[250px]">
+                    {wordCloudData.map((item, idx) => {
+                      // Calculate size between 12px and 36px based on relative frequency
+                      const maxCount = Math.max(...wordCloudData.map(d => d.count));
+                      const fontSize = Math.max(12, Math.min(36, (item.count / maxCount) * 40));
+                      // Cycle through brand colors
+                      const colors = ['text-emerald-500', 'text-blue-500', 'text-indigo-500', 'text-slate-600 dark:text-slate-400', 'text-purple-500'];
+                      const colorClass = colors[idx % colors.length];
+                      
+                      return (
+                        <span 
+                          key={idx} 
+                          className={`font-bold transition-transform hover:scale-110 cursor-default ${colorClass}`}
+                          style={{ fontSize: `${fontSize}px`, opacity: Math.max(0.4, item.count / maxCount + 0.2) }}
+                          title={`${item.count} mentions`}
+                        >
+                          {item.word}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex-grow flex items-center justify-center text-slate-400 text-sm min-h-[200px]">No words available</div>
                 )}
               </div>
 
