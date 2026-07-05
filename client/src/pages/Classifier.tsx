@@ -275,7 +275,7 @@ export default function Classifier() {
   };
 
   const renderInputForm = () => (
-    <CardContent className="space-y-5">
+    <CardContent className="space-y-5 px-4 sm:px-6 pb-24 sm:pb-6 pt-6">
       <div className="space-y-1.5">
         <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Audit session name</label>
         <input
@@ -340,7 +340,7 @@ export default function Classifier() {
               key={i}
               type="button"
               onClick={() => applyPreset(preset)}
-              className="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 transition-colors duration-150 active:scale-95"
+              className="px-3 sm:px-2.5 py-2 sm:py-1.5 text-xs font-bold rounded-lg bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 transition-colors duration-150 active:scale-95"
             >
               {preset.label}
             </button>
@@ -348,11 +348,11 @@ export default function Classifier() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 sm:relative sm:p-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 z-40 flex flex-col sm:flex-row gap-3 pt-2">
         <Button
           onClick={handleClassify}
           disabled={isProcessing || reviewInput.trim().length === 0}
-          className="flex-1 h-11 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
+          className="flex-1 h-12 sm:h-11 px-5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
         >
           {isProcessing && <Loader variant="spinner" size="sm" className="p-0 mr-1 inline-flex" />}
           {results.length > 0 ? "Re-Classify Reviews" : "Classify Reviews"}
@@ -424,12 +424,12 @@ export default function Classifier() {
         </header>
 
         {/* Tab Content 1: Classifier */}
-        <TabsContent value="classifier" className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 focus-visible:outline-none">
+        <TabsContent value="classifier" className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 py-4 sm:py-8 focus-visible:outline-none">
           {results.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Header Actions / Collapsible Input Card */}
-              <Card className="glass-card border shadow-sm transition-all duration-200">
-                <CardContent className="py-4 px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <Card className="glass-card border shadow-sm transition-all duration-200 border-x-0 sm:border-x rounded-none sm:rounded-xl">
+                <CardContent className="py-4 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Current Audit Session</div>
                     <div className="flex flex-wrap items-center gap-3">
@@ -551,7 +551,7 @@ export default function Classifier() {
                         <Button
                           onClick={handleClassify}
                           disabled={isProcessing || reviewInput.trim().length === 0}
-                          className="w-full sm:w-auto h-11 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
+                          className="w-full sm:w-auto h-12 sm:h-11 px-6 bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-200 text-white dark:text-slate-950 font-bold shadow-sm rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-98"
                         >
                           {isProcessing && <Loader variant="spinner" size="sm" className="p-0 mr-1 inline-flex" />}
                           Re-Classify Reviews
@@ -593,8 +593,8 @@ export default function Classifier() {
               )}
 
               {/* Classification Output Card */}
-              <Card className="glass-card border shadow-sm">
-                <CardHeader className="pb-4">
+              <Card className="glass-card border shadow-sm border-x-0 sm:border-x rounded-none sm:rounded-xl">
+                <CardHeader className="pb-4 px-4 sm:px-6">
                   <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
                     Classification Output
                   </CardTitle>
@@ -700,9 +700,9 @@ export default function Classifier() {
             <div className="grid gap-8 lg:grid-cols-12 items-start">
               
               {/* Input Section */}
-              <div className="lg:col-span-5 space-y-6">
-                <Card className="glass-card border shadow-sm">
-                  <CardHeader className="space-y-1.5 pb-4">
+              <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+                <Card className="glass-card border shadow-sm border-x-0 sm:border-x rounded-none sm:rounded-xl pb-2 sm:pb-0">
+                  <CardHeader className="space-y-1.5 pb-4 px-4 sm:px-6 pt-6">
                     <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">
                       New Classification Audit
                     </CardTitle>

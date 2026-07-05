@@ -132,7 +132,7 @@ export default function Dashboard() {
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       <Navbar />
 
-      <main className="flex-grow mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 w-full">
+      <main className="flex-grow mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 py-8 sm:py-16 w-full">
         <div className="space-y-10">
           {/* Header */}
           <div className="space-y-2">
@@ -157,9 +157,9 @@ export default function Dashboard() {
           ) : (
             <>
               {/* Stats Grid */}
-              <div className="grid gap-6 sm:grid-cols-3">
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 sm:pb-0 sm:grid sm:gap-6 sm:grid-cols-3 -mx-2 px-2 sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
                 {stats.map((stat, i) => (
-                  <div key={i} className="glass-card border rounded-2xl p-6 relative overflow-hidden shadow-sm">
+                  <div key={i} className="glass-card border rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-sm min-w-[85vw] sm:min-w-0 snap-center shrink-0">
                     <div className="absolute top-0 left-0 w-full h-[3px] bg-slate-900 dark:bg-slate-800" />
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -182,12 +182,12 @@ export default function Dashboard() {
               </div>
 
               {/* Charts Section */}
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
                 {/* Sentiment Pie Chart */}
-                <div className="rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Sentiment Breakdown</h3>
+                <div className="rounded-2xl sm:rounded-3xl glass-card p-4 sm:p-6 border shadow-sm flex flex-col">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">Sentiment Breakdown</h3>
                   {sentimentData.length > 0 ? (
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] sm:h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -214,10 +214,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Theme Bar Chart */}
-                <div className="rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Theme Frequency</h3>
+                <div className="rounded-2xl sm:rounded-3xl glass-card p-4 sm:p-6 border shadow-sm flex flex-col">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">Theme Frequency</h3>
                   {themeData.length > 0 ? (
-                    <div className="h-[300px] w-full">
+                    <div className="h-[250px] sm:h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={themeData} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
                           <XAxis type="number" hide />
@@ -234,10 +234,10 @@ export default function Dashboard() {
               </div>
 
               {/* Sentiment Timeline Chart */}
-              <div className="mt-6 rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">Sentiment Over Time</h3>
+              <div className="mt-4 sm:mt-6 rounded-2xl sm:rounded-3xl glass-card p-4 sm:p-6 border shadow-sm flex flex-col">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 sm:mb-6">Sentiment Over Time</h3>
                 {timelineData.length > 0 ? (
-                  <div className="h-[300px] w-full">
+                  <div className="h-[250px] sm:h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={timelineData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
@@ -256,8 +256,8 @@ export default function Dashboard() {
               </div>
 
               {/* Dynamic Word Cloud */}
-              <div className="mt-6 rounded-3xl glass-card p-6 border shadow-sm flex flex-col">
-                <div className="flex items-center gap-2 mb-6">
+              <div className="mt-4 sm:mt-6 rounded-2xl sm:rounded-3xl glass-card p-4 sm:p-6 border shadow-sm flex flex-col">
+                <div className="flex items-center gap-2 mb-4 sm:mb-6">
                   <Cloud className="h-5 w-5 text-indigo-500" />
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Review Word Cloud</h3>
                 </div>
@@ -291,15 +291,15 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Activity */}
-              <div className="mt-8 rounded-3xl glass-card p-6 border shadow-sm">
-                <div className="flex items-center gap-2 mb-6">
+              <div className="mt-6 sm:mt-8 rounded-2xl sm:rounded-3xl glass-card p-4 sm:p-6 border shadow-sm">
+                <div className="flex items-center gap-2 mb-4 sm:mb-6">
                   <Clock className="h-5 w-5 text-slate-500" />
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Classifications</h3>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {reviews?.slice(0, 5).map((review) => (
-                    <div key={review.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md">
+                    <div key={review.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:shadow-md gap-3 sm:gap-0">
                       <div className="flex items-start gap-3 overflow-hidden">
                         <MessageSquare className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
                         <div className="truncate pr-4">

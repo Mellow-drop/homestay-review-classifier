@@ -270,8 +270,8 @@ export default function SessionHistory() {
               className="w-full"
             >
               <CollapsibleTrigger asChild>
-                <div className="p-6 sm:p-7 flex items-center justify-between w-full cursor-pointer group hover:bg-slate-50/40 dark:hover:bg-slate-900/10 transition-colors duration-150">
-                  <div className="flex items-start gap-4 flex-1">
+                <div className="p-4 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between w-full cursor-pointer group hover:bg-slate-50/40 dark:hover:bg-slate-900/10 transition-colors duration-150 gap-4 sm:gap-0">
+                  <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
                     <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 transition-colors border border-slate-200/40 dark:border-slate-800/40">
                       <Calendar className="h-5 w-5 text-slate-500" />
                     </div>
@@ -307,7 +307,7 @@ export default function SessionHistory() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end w-full sm:w-auto gap-2 border-t border-slate-100 dark:border-slate-800/50 sm:border-0 pt-3 sm:pt-0" onClick={(e) => e.stopPropagation()}>
                     {editingId !== session.id && (
                       <Button variant="ghost" size="icon" className="text-slate-400 hover:text-emerald-600" onClick={() => { setEditingId(session.id); setEditName(session.sessionName); }}>
                         <Edit2 className="h-4 w-4" />
