@@ -619,8 +619,11 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     # 4. Batch save classified reviews to the database
     if classified_reviews:
         try:
-            db.bulk_save_objects(classified_reviews)
+            db.add_all(classified_reviews)
+            db.flush()   # assigns DB IDs without committing
             db.commit()
+            for r in classified_reviews:
+                db.refresh(r)
         except Exception as e:
             db.rollback()
             logger.error(f"Error saving classified reviews to DB: {e}")
@@ -632,6 +635,7 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     # We use the generated rows, which now could be multiple rows per review string.
     for r in classified_reviews:
         final_classifications.append(ReviewResponse(
+            id=r.id,
             originalReview=r.original_review,
             sentiment=r.sentiment,
             theme=r.theme,
@@ -761,7 +765,7 @@ def search_reviews(
         if sentiment:
             query = query.filter(ClassifiedReviewModel.sentiment == sentiment.lower())
         if theme:
-            query = query.filter(ClassifiedReviewModel.theme == theme.lower())
+            query = query.filter(ClassifiedReviewModel.theme.ilike(f"%{theme.lower()}%"))
             
         reviews = query.order_by(desc(ClassifiedReviewModel.created_at)).all()
         
@@ -797,6 +801,10 @@ def update_review(review_id: int, review_update: ReviewUpdate, db: Session = Dep
             review_obj.theme = review_update.theme
         if review_update.suggestedResponse is not None:
             review_obj.suggested_response = review_update.suggestedResponse
+        if review_update.urgencyLevel is not None:
+            review_obj.urgency_level = review_update.urgencyLevel
+        if review_update.needsEscalation is not None:
+            review_obj.needs_escalation = review_update.needsEscalation
             
         db.commit()
         db.refresh(review_obj)

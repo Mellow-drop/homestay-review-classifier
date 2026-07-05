@@ -49,7 +49,7 @@ interface ClassifiedReview {
   id: number;
   originalReview: string;
   sentiment: "positive" | "neutral" | "negative";
-  theme: "food" | "host" | "location" | "cleanliness" | "value" | "experience";
+  theme: string;
   suggestedResponse: string;
   urgencyLevel: string;
   needsEscalation: boolean;
@@ -449,7 +449,7 @@ export default function SessionHistory() {
                                 />
                               ) : (
                                 <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed italic whitespace-pre-wrap">
-                                  "{review.suggestedResponse}"
+                                  &ldquo;{review.suggestedResponse}&rdquo;
                                 </div>
                               )}
                             </TableCell>
@@ -628,9 +628,9 @@ export default function SessionHistory() {
                     </TableRow>
                   ))}
                   {allReviewsQuery.data?.filter((r: any) => filterSentiment === "all" || r.sentiment === filterSentiment)
-                    .filter((r: any) => filterTheme === "all" || r.theme === filterTheme).length === 0 && (
+                    .filter((r: any) => filterTheme === "all" || r.theme.includes(filterTheme)).length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-10 text-slate-500 font-medium">
+                      <TableCell colSpan={4} className="text-center py-10 text-slate-500 font-medium">
                         No reviews match your filters.
                       </TableCell>
                     </TableRow>
