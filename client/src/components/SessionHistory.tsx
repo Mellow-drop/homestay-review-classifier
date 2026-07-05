@@ -362,9 +362,9 @@ export default function SessionHistory() {
                       <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
                         <TableRow className="border-slate-200/80 dark:border-slate-800/80 hover:bg-transparent">
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Sentiment</TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-36">Theme Tag</TableHead>
-                          <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
+                          <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-32">Sentiment</TableHead>
+                          <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-36">Theme Tag</TableHead>
+                          <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                           <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[320px]">Suggested Management Reply</TableHead>
                           <TableHead className="w-24 text-center font-semibold text-slate-700 dark:text-slate-300 py-3.5">Action</TableHead>
                         </TableRow>
@@ -375,7 +375,7 @@ export default function SessionHistory() {
                             <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pr-6 leading-relaxed whitespace-pre-wrap">
                               {review.originalReview}
                             </TableCell>
-                            <TableCell className="py-4">
+                            <TableCell className="py-4 text-center">
                               {editingReviewId === review.id ? (
                                 <select 
                                   value={editSentiment} 
@@ -392,7 +392,7 @@ export default function SessionHistory() {
                                 </Badge>
                               )}
                             </TableCell>
-                            <TableCell className="py-4">
+                            <TableCell className="py-4 text-center">
                               {editingReviewId === review.id ? (
                                 <select 
                                   value={editTheme} 
@@ -407,15 +407,22 @@ export default function SessionHistory() {
                                   <option value="experience">Experience</option>
                                 </select>
                               ) : (
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
-                                  <span>{themeIcons[review.theme as keyof typeof themeIcons]}</span>
-                                  <span className="capitalize">{review.theme}</span>
-                                </span>
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                  {(review.theme || 'experience').split(',').map((t) => {
+                                    const themeName = t.trim();
+                                    return (
+                                      <span key={themeName} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
+                                        <span>{themeIcons[themeName as keyof typeof themeIcons] || themeIcons['experience']}</span>
+                                        <span className="capitalize">{themeName}</span>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </TableCell>
-                            <TableCell className="py-4">
+                            <TableCell className="py-4 text-center">
                                 {review.urgencyLevel && (
-                                  <div className="flex flex-col gap-1 items-start">
+                                  <div className="flex flex-col gap-1 items-center">
                                     <Badge className={`${
                                       review.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
                                       review.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
@@ -566,34 +573,41 @@ export default function SessionHistory() {
                 <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
                   <TableRow className="border-slate-200/80 dark:border-slate-800/80 hover:bg-transparent">
                     <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 min-w-[280px]">Guest Review</TableHead>
-                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-28">Sentiment</TableHead>
-                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-32">Theme Tag</TableHead>
-                    <TableHead className="font-semibold text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
+                    <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-28">Sentiment</TableHead>
+                    <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-32">Theme Tag</TableHead>
+                    <TableHead className="font-semibold text-center text-slate-700 dark:text-slate-300 py-3.5 w-24">Urgency</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {allReviewsQuery.data
                     ?.filter((r: any) => filterSentiment === "all" || r.sentiment === filterSentiment)
-                    .filter((r: any) => filterTheme === "all" || r.theme === filterTheme)
+                    .filter((r: any) => filterTheme === "all" || r.theme.includes(filterTheme))
                     .map((review: ClassifiedReview, idx: number) => (
                     <TableRow key={idx} className="border-slate-200/80 dark:border-slate-800/80 hover:bg-slate-100/30 dark:hover:bg-slate-500/5 transition-colors duration-150">
                       <TableCell className="text-sm font-medium text-slate-800 dark:text-slate-200 py-4 pr-6 leading-relaxed whitespace-pre-wrap">
                         {review.originalReview}
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="py-4 text-center">
                         <Badge className={`${sentimentColors[review.sentiment] || sentimentColors.neutral} font-bold capitalize px-2.5 py-0.5 rounded-full text-xs shadow-sm`}>
                           {review.sentiment}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
-                          <span>{themeIcons[review.theme as keyof typeof themeIcons]}</span>
-                          <span className="capitalize">{review.theme}</span>
-                        </span>
+                      <TableCell className="py-4 text-center">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          {(review.theme || 'experience').split(',').map((t) => {
+                            const themeName = t.trim();
+                            return (
+                              <span key={themeName} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 shadow-sm">
+                                <span>{themeIcons[themeName as keyof typeof themeIcons] || themeIcons['experience']}</span>
+                                <span className="capitalize">{themeName}</span>
+                              </span>
+                            );
+                          })}
+                        </div>
                       </TableCell>
-                      <TableCell className="py-4">
+                      <TableCell className="py-4 text-center">
                         {review.urgencyLevel && (
-                          <div className="flex flex-col gap-1 items-start">
+                          <div className="flex flex-col gap-1 items-center">
                             <Badge className={`${
                               review.urgencyLevel === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 border-red-200 dark:border-red-500/30' :
                               review.urgencyLevel === 'medium' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :

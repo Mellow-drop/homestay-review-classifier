@@ -58,7 +58,10 @@ export default function Dashboard() {
 
   // Calculate Themes
   const themeCounts = reviews?.reduce((acc, curr) => {
-    acc[curr.theme] = (acc[curr.theme] || 0) + 1;
+    const themes = (curr.theme || 'experience').split(',').map(t => t.trim());
+    themes.forEach(t => {
+      acc[t] = (acc[t] || 0) + 1;
+    });
     return acc;
   }, {} as Record<string, number>) || {};
 
