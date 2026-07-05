@@ -437,7 +437,7 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     
     for i, review in enumerate(reviews):
         clean_review = normalize_text(review)
-        if clean_review in MOCK_CLASSIFICATIONS:
+        if clean_review in MOCK_CLASSIFICATIONS and not request.brandVoice:
             mock_data = MOCK_CLASSIFICATIONS[clean_review]
             db_review = ClassifiedReviewModel(
                 session_id=db_session.id,
