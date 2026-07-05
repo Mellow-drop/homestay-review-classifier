@@ -21,9 +21,39 @@ logger = logging.getLogger("sentiment-classifier")
 # Load environment variables
 load_dotenv()
 
-gemini_key = os.environ.get("GEMINI_API_KEY")
-if not gemini_key:
-    logger.warning("GEMINI_API_KEY is not set. Classification requests will fallback to local heuristics.")
+gemini_keys = [
+    os.environ.get("GEMINI_API_KEY_1"),
+    os.environ.get("GEMINI_API_KEY_2"),
+    os.environ.get("GEMINI_API_KEY")
+]
+gemini_keys = [k for k in gemini_keys if k]
+
+if not gemini_keys:
+    logger.warning("No GEMINI_API_KEY found in environment variables. Running in local fallback mode.")
+
+def make_gemini_request(data_payload):
+    last_err = None
+    for key in gemini_keys:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={key}"
+        req = urllib.request.Request(
+            url, 
+            data=json.dumps(data_payload).encode("utf-8"), 
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as he:
+            err_msg = he.read().decode("utf-8")
+            last_err = Exception(f"HTTPError {he.code}: {err_msg}")
+            logger.warning(f"Gemini API key failed: {last_err}")
+            continue
+        except Exception as e:
+            last_err = e
+            logger.warning(f"Gemini API key failed: {last_err}")
+            continue
+    raise last_err
 
 # Setup Database Connection
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -463,13 +493,12 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
         )
 
         try:
-            if not gemini_key:
-                raise Exception("GEMINI_API_KEY not configured")
+            if not gemini_keys:
+                raise Exception("No GEMINI_API_KEY configured")
                 
             # Prepare input payload
             input_payload = json.dumps([{"id": i, "text": rev} for i, rev in enumerate(remaining_reviews)])
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
             data = {
                 "system_instruction": {
                     "parts": [{"text": system_instruction}]
@@ -484,19 +513,7 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
                 }
             }
             
-            req = urllib.request.Request(
-                url, 
-                data=json.dumps(data).encode("utf-8"), 
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            
-            try:
-                with urllib.request.urlopen(req) as response:
-                    result = json.loads(response.read().decode("utf-8"))
-            except urllib.error.HTTPError as he:
-                err_msg = he.read().decode("utf-8")
-                raise Exception(f"HTTPError {he.code}: {err_msg}")
+            result = make_gemini_request(data)
                 
             # Extract text from the Gemini response structure
             try:
@@ -778,7 +795,7 @@ def generate_session_summary(session_id: int, db: Session = Depends(get_db)):
         if not session_obj:
             raise HTTPException(status_code=404, detail="Session not found")
             
-        if not gemini_key:
+        if not gemini_keys:
             return {"summary": "Gemini API Key is not configured. Summary generation requires an active API key."}
             
         reviews = session_obj.reviews
@@ -797,26 +814,17 @@ def generate_session_summary(session_id: int, db: Session = Depends(get_db)):
             f"{review_text}"
         )
         
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
         data = {
             "contents": [{"parts": [{"text": prompt}]}]
         }
         
-        req = urllib.request.Request(
-            url, 
-            data=json.dumps(data).encode('utf-8'), 
-            headers={'Content-Type': 'application/json'},
-            method='POST'
-        )
-        
         try:
-            with urllib.request.urlopen(req) as response:
-                result = json.loads(response.read().decode())
-                summary_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                if not summary_text:
-                    raise ValueError("Empty response from Gemini API")
-                
-                return {"summary": summary_text.strip()}
+            result = make_gemini_request(data)
+            summary_text = result.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+            if not summary_text:
+                raise ValueError("Empty response from Gemini API")
+            
+            return {"summary": summary_text.strip()}
         except Exception as api_err:
             logger.error(f"Gemini API error during summary: {api_err}")
             raise HTTPException(status_code=502, detail="Failed to generate summary from AI provider.")
