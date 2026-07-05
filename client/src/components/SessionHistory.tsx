@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar } from "lucide-react";
+import { AlertCircle, ChevronDown, Copy, CheckCircle2, History, Calendar, Edit2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -55,6 +56,30 @@ interface ClassifiedReview {
 export default function SessionHistory() {
   const [expandedSession, setExpandedSession] = useState<number | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await axios.delete(`/api/sessions/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      toast.success("Session deleted successfully");
+    }
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: number, name: string }) => {
+      await axios.patch(`/api/sessions/${id}`, { session_name: name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      setEditingId(null);
+      toast.success("Session renamed successfully");
+    }
+  });
 
   const sessionsQuery = useQuery({
     queryKey: ["sessions"],
@@ -146,14 +171,31 @@ export default function SessionHistory() {
             >
               <CollapsibleTrigger asChild>
                 <div className="p-6 sm:p-7 flex items-center justify-between w-full cursor-pointer group hover:bg-slate-50/40 dark:hover:bg-slate-900/10 transition-colors duration-150">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-start gap-4 flex-1">
                     <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 transition-colors border border-slate-200/40 dark:border-slate-800/40">
                       <Calendar className="h-5 w-5 text-slate-500" />
                     </div>
-                    <div className="space-y-1.5">
-                      <div className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-slate-50 group-hover:text-emerald-600 transition-colors">
-                        {session.sessionName || `Audit Session #${session.id}`}
-                      </div>
+                    <div className="space-y-1.5 flex-1">
+                      {editingId === session.id ? (
+                        <div className="flex items-center gap-2 max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <Input 
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="h-8 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') updateMutation.mutate({ id: session.id, name: editName });
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                          />
+                          <Button size="sm" onClick={() => updateMutation.mutate({ id: session.id, name: editName })}>Save</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <div className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-slate-50 group-hover:text-emerald-600 transition-colors">
+                          {session.sessionName || `Audit Session #${session.id}`}
+                        </div>
+                      )}
                       <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex flex-wrap gap-2.5 items-center">
                         <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wider uppercase border border-slate-200/40">
                           {session.totalReviews} reviews
@@ -165,11 +207,23 @@ export default function SessionHistory() {
                       </div>
                     </div>
                   </div>
-                  <ChevronDown
-                    className={`h-5 w-5 text-slate-400 group-hover:text-slate-600 transition-transform duration-300 ${
-                      expandedSession === session.id ? "rotate-180 text-emerald-500" : ""
-                    }`}
-                  />
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {editingId !== session.id && (
+                      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-emerald-600" onClick={() => { setEditingId(session.id); setEditName(session.sessionName); }}>
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-600" onClick={() => deleteMutation.mutate(session.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <div onClick={() => setExpandedSession(expandedSession === session.id ? null : session.id)} className="cursor-pointer">
+                      <ChevronDown
+                        className={`h-5 w-5 ml-2 text-slate-400 group-hover:text-slate-600 transition-transform duration-300 ${
+                          expandedSession === session.id ? "rotate-180 text-emerald-500" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </div>
               </CollapsibleTrigger>
 
