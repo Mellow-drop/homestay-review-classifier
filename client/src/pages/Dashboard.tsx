@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { TrendingUp, Users, Award, AlertCircle, MessageSquare, Clock, Cloud } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { 
-  PieChart, Pie, Cell, 
+  PieChart, Pie, Cell, Legend,
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid
 } from "recharts";
@@ -194,17 +194,20 @@ export default function Dashboard() {
                             data={sentimentData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={70}
-                            outerRadius={100}
+                            innerRadius={50}
+                            outerRadius={80}
                             paddingAngle={5}
                             dataKey="value"
                             stroke="none"
+                            label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                            labelLine={false}
                           >
                             {sentimentData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
+                          <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -266,8 +269,8 @@ export default function Dashboard() {
                     {(() => {
                       const maxCount = Math.max(...wordCloudData.map(d => d.count));
                       return wordCloudData.map((item, idx) => {
-                        // Calculate size between 14px and 48px based on relative frequency
-                        const fontSize = Math.max(14, Math.min(48, (item.count / maxCount) * 56));
+                        // Calculate size between 12px and 32px based on relative frequency
+                        const fontSize = Math.max(12, Math.min(32, (item.count / maxCount) * 40));
                         // Cycle through brand colors
                         const colors = ['text-emerald-600 dark:text-emerald-400', 'text-blue-600 dark:text-blue-400', 'text-indigo-600 dark:text-indigo-400', 'text-slate-700 dark:text-slate-300', 'text-purple-600 dark:text-purple-400', 'text-rose-600 dark:text-rose-400'];
                         const colorClass = colors[idx % colors.length];
@@ -275,11 +278,12 @@ export default function Dashboard() {
                         return (
                           <span 
                             key={idx} 
-                            className={`font-extrabold transition-all duration-300 hover:scale-110 cursor-default opacity-90 hover:opacity-100 ${colorClass}`}
+                            className={`font-extrabold transition-all duration-300 hover:scale-110 cursor-default opacity-90 hover:opacity-100 flex items-baseline gap-1 ${colorClass}`}
                             style={{ fontSize: `${fontSize}px` }}
                             title={`${item.count} mentions`}
                           >
                             {item.word}
+                            <span className="text-[0.7em] opacity-70 font-semibold">({item.count})</span>
                           </span>
                         );
                       });

@@ -330,7 +330,7 @@ export default function SessionHistory() {
                 </div>
               </CollapsibleTrigger>
 
-              <CollapsibleContent className="border-t border-slate-100 dark:border-slate-800 p-6 sm:p-7 bg-slate-50/20 dark:bg-slate-950/10">
+              <CollapsibleContent className="border-t border-slate-100 dark:border-slate-800 p-6 sm:p-7 bg-slate-50/20 dark:bg-slate-950/10 w-full min-w-0 overflow-hidden">
                 {sessionDetailsQuery.isLoading && expandedSession === session.id ? (
                   <div className="flex items-center justify-center py-12">
                     <Spinner className="h-7 w-7 text-emerald-500" />
@@ -363,7 +363,7 @@ export default function SessionHistory() {
                           : "Generate a 1-paragraph summary of these reviews using Google Gemini."}
                       </div>
                     </div>
-                    <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30">
+                    <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm bg-white dark:bg-slate-950/30 w-full max-w-full">
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
                         <TableRow className="border-slate-200/80 dark:border-slate-800/80 hover:bg-transparent">
