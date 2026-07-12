@@ -14,6 +14,14 @@ import urllib.request
 import urllib.error
 from dotenv import load_dotenv
 
+from passlib.context import CryptContext
+import jwt
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi import Request
+import httpx
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sentiment-classifier")
@@ -103,6 +111,42 @@ app = FastAPI(
     version="1.0.0"
 )
 
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+JWT_SECRET = os.environ.get("JWT_SECRET", "super-secret-key-change-me")
+ALGORITHM = "HS256"
+security = HTTPBearer()
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict, expires_delta: datetime.timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.datetime.utcnow() + (expires_delta if expires_delta else datetime.timedelta(days=7))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[ALGORITHM])
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    from .models import UserModel
+    user = db.query(UserModel).filter(UserModel.id == int(user_id)).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
@@ -137,6 +181,18 @@ def global_exception_handler(request, exc):
     )
 
 # Pydantic Schemas
+class RegisterRequest(BaseModel):
+    email: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=6)
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
 class ClassifyRequest(BaseModel):
     reviews: List[str] = Field(..., min_items=1, description="List of review strings to analyze")
     sessionName: Optional[str] = Field(None, description="Optional name for the classification session")
@@ -200,6 +256,83 @@ class SearchReviewResponse(BaseModel):
         populate_by_name = True
 
 # API Endpoints
+from .models import UserModel
+
+@app.post("/api/auth/register")
+@limiter.limit("5/minute")
+def register(request: Request, user_data: RegisterRequest, db: Session = Depends(get_db)):
+    existing_user = db.query(UserModel).filter(UserModel.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_password = get_password_hash(user_data.password)
+    new_user = UserModel(email=user_data.email, password_hash=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"message": "User registered successfully"}
+
+@app.post("/api/auth/login")
+@limiter.limit("10/minute")
+def login(request: Request, user_data: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(UserModel).filter(UserModel.email == user_data.email).first()
+    if not user or not user.password_hash or not verify_password(user_data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    access_token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/api/auth/google/login")
+def google_login():
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    if not client_id:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured")
+    
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback")
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email profile"
+    return {"url": auth_url}
+
+@app.post("/api/auth/google/callback")
+def google_callback(code: str, db: Session = Depends(get_db)):
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback")
+    
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri
+    }
+    
+    try:
+        token_response = httpx.post(token_url, data=data).json()
+        if "access_token" not in token_response:
+            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+            
+        user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+        headers = {"Authorization": f"Bearer {token_response['access_token']}"}
+        user_info = httpx.get(user_info_url, headers=headers).json()
+        
+        email = user_info.get("email")
+        if not email:
+            raise HTTPException(status_code=400, detail="Google account has no email")
+            
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not user:
+            user = UserModel(email=email)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except Exception as e:
+        logger.error(f"Google OAuth error: {e}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
 
 @app.get("/api/health")
 def health_check():
@@ -385,13 +518,14 @@ def local_classify(review: str) -> dict:
     }
 
 @app.post("/api/classify", response_model=ClassifyResponse)
-def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
+def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     reviews = request.reviews
     session_name = request.sessionName or f"Classification {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     
     # 1. Create a classification session record
     try:
         db_session = SessionModel(
+            user_id=current_user.id,
             session_name=session_name,
             total_reviews=len(reviews)
         )
@@ -624,9 +758,9 @@ def classify_reviews(request: ClassifyRequest, db: Session = Depends(get_db)):
     )
 
 @app.get("/api/sessions", response_model=List[SessionBrief])
-def get_sessions(db: Session = Depends(get_db)):
+def get_sessions(db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        sessions = db.query(SessionModel).order_by(desc(SessionModel.created_at)).all()
+        sessions = db.query(SessionModel).filter(SessionModel.user_id == current_user.id).order_by(desc(SessionModel.created_at)).all()
         # Map fields properly for response model aliases
         results = []
         for s in sessions:
@@ -642,9 +776,9 @@ def get_sessions(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
 
 @app.get("/api/sessions/{session_id}", response_model=SessionDetails)
-def get_session_details(session_id: int, db: Session = Depends(get_db)):
+def get_session_details(session_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id, SessionModel.user_id == current_user.id).first()
         if not session_obj:
             raise HTTPException(status_code=404, detail="Session not found")
             
@@ -680,9 +814,9 @@ def get_session_details(session_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
 
 @app.patch("/api/sessions/{session_id}", response_model=SessionBrief)
-def update_session(session_id: int, session_data: SessionUpdate, db: Session = Depends(get_db)):
+def update_session(session_id: int, session_data: SessionUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id, SessionModel.user_id == current_user.id).first()
         if not session_obj:
             raise HTTPException(status_code=404, detail="Session not found")
         
@@ -704,9 +838,9 @@ def update_session(session_id: int, session_data: SessionUpdate, db: Session = D
         raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
 
 @app.delete("/api/sessions/{session_id}")
-def delete_session(session_id: int, db: Session = Depends(get_db)):
+def delete_session(session_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id, SessionModel.user_id == current_user.id).first()
         if not session_obj:
             raise HTTPException(status_code=404, detail="Session not found")
         
@@ -725,10 +859,11 @@ def search_reviews(
     q: Optional[str] = None, 
     sentiment: Optional[str] = None, 
     theme: Optional[str] = None, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
 ):
     try:
-        query = db.query(ClassifiedReviewModel).join(SessionModel)
+        query = db.query(ClassifiedReviewModel).join(SessionModel).filter(SessionModel.user_id == current_user.id)
         
         if q:
             query = query.filter(ClassifiedReviewModel.original_review.ilike(f"%{q}%"))
@@ -759,9 +894,9 @@ def search_reviews(
         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
 
 @app.patch("/api/reviews/{review_id}")
-def update_review(review_id: int, review_update: ReviewUpdate, db: Session = Depends(get_db)):
+def update_review(review_id: int, review_update: ReviewUpdate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        review_obj = db.query(ClassifiedReviewModel).filter(ClassifiedReviewModel.id == review_id).first()
+        review_obj = db.query(ClassifiedReviewModel).join(SessionModel).filter(ClassifiedReviewModel.id == review_id, SessionModel.user_id == current_user.id).first()
         if not review_obj:
             raise HTTPException(status_code=404, detail="Review not found")
         
@@ -788,9 +923,9 @@ def update_review(review_id: int, review_update: ReviewUpdate, db: Session = Dep
         raise HTTPException(status_code=500, detail=f"Database update failed: {str(e)}")
 
 @app.get("/api/sessions/{session_id}/summary")
-def generate_session_summary(session_id: int, db: Session = Depends(get_db)):
+def generate_session_summary(session_id: int, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     try:
-        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id).first()
+        session_obj = db.query(SessionModel).filter(SessionModel.id == session_id, SessionModel.user_id == current_user.id).first()
         if not session_obj:
             raise HTTPException(status_code=404, detail="Session not found")
             
