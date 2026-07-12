@@ -19,8 +19,8 @@ export default function AuthCallback() {
       }
 
       try {
-        const res = await fetch(`/api/auth/google/callback?code=${code}`, {
-          method: "POST"
+        const res = await fetch(`/api/auth/google/callback?code=${encodeURIComponent(code)}`, {
+          method: "GET"
         });
         
         const data = await res.json();

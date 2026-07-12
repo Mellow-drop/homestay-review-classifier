@@ -296,7 +296,7 @@ def google_login():
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email profile"
     return {"url": auth_url}
 
-@app.post("/api/auth/google/callback")
+@app.get("/api/auth/google/callback")
 def google_callback(code: str, db: Session = Depends(get_db)):
     client_id = os.environ.get("GOOGLE_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
