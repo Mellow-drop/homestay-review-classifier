@@ -298,10 +298,14 @@ def google_login():
 
 @app.get("/api/auth/google/callback")
 def google_callback(code: str, db: Session = Depends(get_db)):
+    import requests as req_lib
     client_id = os.environ.get("GOOGLE_CLIENT_ID")
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
     redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback")
-    
+
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="Google OAuth not configured on server")
+
     token_url = "https://oauth2.googleapis.com/token"
     data = {
         "client_id": client_id,
@@ -310,32 +314,37 @@ def google_callback(code: str, db: Session = Depends(get_db)):
         "grant_type": "authorization_code",
         "redirect_uri": redirect_uri
     }
-    
+
     try:
-        token_response = httpx.post(token_url, data=data).json()
-        logger.error(f"Google token_response: {token_response}")
-        if "access_token" not in token_response:
-            error_desc = token_response.get("error_description", token_response.get("error", "unknown"))
+        token_resp = req_lib.post(token_url, data=data, timeout=10)
+        token_data = token_resp.json()
+        logger.error(f"Google token_response: {token_data}")
+
+        if "access_token" not in token_data:
+            error_desc = token_data.get("error_description", token_data.get("error", "unknown"))
             raise HTTPException(status_code=400, detail=f"Google token exchange failed: {error_desc}")
-            
-        user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
-        headers = {"Authorization": f"Bearer {token_response['access_token']}"}
-        user_info = httpx.get(user_info_url, headers=headers).json()
-        
+
+        user_info_resp = req_lib.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {token_data['access_token']}"},
+            timeout=10
+        )
+        user_info = user_info_resp.json()
+
         email = user_info.get("email")
         if not email:
             raise HTTPException(status_code=400, detail="Google account has no email")
-            
+
         user = db.query(UserModel).filter(UserModel.email == email).first()
         if not user:
             user = UserModel(email=email)
             db.add(user)
             db.commit()
             db.refresh(user)
-            
+
         access_token = create_access_token(data={"sub": str(user.id)})
         return {"access_token": access_token, "token_type": "bearer"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
