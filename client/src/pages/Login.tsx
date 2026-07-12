@@ -19,7 +19,7 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -43,7 +43,7 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/auth/google/login");
+      const res = await fetch("/api/auth/google/login");
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;

@@ -19,7 +19,7 @@ export default function AuthCallback() {
       }
 
       try {
-        const res = await fetch(`http://localhost:8000/api/auth/google/callback?code=${code}`, {
+        const res = await fetch(`/api/auth/google/callback?code=${code}`, {
           method: "POST"
         });
         
