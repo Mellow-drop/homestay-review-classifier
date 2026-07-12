@@ -14,8 +14,11 @@ A premium review auditing application that analyzes guest feedback (sentiment & 
    cp .env.example .env
    ```
 2. Open `.env` and fill in your keys:
-   - `GEMINI_API_KEY`: Obtain from Google AI Studio.
+   - `GEMINI_API_KEY`: Obtain from [Google AI Studio](https://aistudio.google.com/).
    - `DATABASE_URL`: PostgreSQL connection string (compatible with Supabase, neon, etc.).
+   - `JWT_SECRET`: A long, random secret string for signing JWT tokens.
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Create at [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth 2.0 Client IDs.
+   - `GOOGLE_REDIRECT_URI`: Set to `https://your-domain.vercel.app/auth/callback` for production or `http://localhost:5173/auth/callback` for local dev.
 
 ## How to run backend locally
 
@@ -72,6 +75,22 @@ We chose **PostgreSQL (via Supabase)** as our primary database over MongoDB. Sin
 3. Copy the URI string (starts with `postgresql://`).
 4. Paste it into your `.env` file as `DATABASE_URL`.
 5. On the first startup, SQLAlchemy will automatically detect your engine and create the necessary tables (`sessions` and `classified_reviews`) if they do not already exist.
+
+---
+## 🔐 Authentication
+
+SentiNest uses a full JWT-based authentication system with Google OAuth support.
+
+### Features
+- **Register / Login / Logout** — Email + bcrypt-hashed password
+- **JWT Tokens** — Signed tokens with configurable expiry, verified on every protected route
+- **Google OAuth 2.0** — One-click sign-in via Google account
+- **Protected Routes** — `/dashboard` and `/history` redirect unauthenticated users to `/login`
+- **Rate Limiting** — `/api/auth/login` and `/api/auth/register` are rate-limited via `slowapi`
+- **Input Validation** — All auth endpoints validate inputs via Pydantic schemas
+
+### Protected API Endpoints
+Any request to a protected endpoint without a valid `Authorization: Bearer <token>` header returns **401 Unauthorized**.
 
 ---
 ## ☁️ Deployment
