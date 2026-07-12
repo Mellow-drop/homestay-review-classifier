@@ -313,8 +313,10 @@ def google_callback(code: str, db: Session = Depends(get_db)):
     
     try:
         token_response = httpx.post(token_url, data=data).json()
+        logger.error(f"Google token_response: {token_response}")
         if "access_token" not in token_response:
-            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+            error_desc = token_response.get("error_description", token_response.get("error", "unknown"))
+            raise HTTPException(status_code=400, detail=f"Google token exchange failed: {error_desc}")
             
         user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
         headers = {"Authorization": f"Bearer {token_response['access_token']}"}
@@ -334,9 +336,12 @@ def google_callback(code: str, db: Session = Depends(get_db)):
         access_token = create_access_token(data={"sub": str(user.id)})
         return {"access_token": access_token, "token_type": "bearer"}
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Google OAuth error: {e}")
-        raise HTTPException(status_code=500, detail="Authentication failed")
+        raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
+
 
 @app.get("/api/health")
 def health_check():
