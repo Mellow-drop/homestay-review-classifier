@@ -41,7 +41,7 @@ if not gemini_keys:
 def make_gemini_request(data_payload):
     last_err = None
     for key in gemini_keys:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
         req = urllib.request.Request(
             url, 
             data=json.dumps(data_payload).encode("utf-8"), 
