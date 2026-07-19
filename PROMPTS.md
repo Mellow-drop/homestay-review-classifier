@@ -3,7 +3,7 @@
 ## Feature: Guest Review Sentiment Classifier & Response Generator
 
 **App:** SentiNest — Homestay Review Intelligence Dashboard  
-**AI API:** Google Gemini (`gemini-1.5-flash`)  
+**AI API:** Google Gemini (`gemini-3.5-flash`)  
 **Endpoint:** `POST /api/classify`  
 **Task:** Classify guest reviews by sentiment (positive/neutral/negative), identify operational themes, generate a suggested management response, and flag urgency for escalation.
 
@@ -176,7 +176,7 @@ This role assignment was kept consistent across all production requests. It anch
 
 | Setting | Value |
 |---|---|
-| Model | `gemini-1.5-flash` (via `gemini-3.5-flash` endpoint alias) |
+| Model | `gemini-3.5-flash` (stable, Gemini 3 family) |
 | API Key Storage | `.env` → `GEMINI_API_KEY` (never committed) |
 | Key in `.gitignore` | ✅ Verified |
 | Batch Size | Up to 20 reviews per request |

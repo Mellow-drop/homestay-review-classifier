@@ -41,7 +41,7 @@ if not gemini_keys:
 def make_gemini_request(data_payload):
     last_err = None
     for key in gemini_keys:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={key}"
         req = urllib.request.Request(
             url, 
             data=json.dumps(data_payload).encode("utf-8"), 
@@ -351,6 +351,46 @@ def google_callback(code: str, db: Session = Depends(get_db)):
         logger.error(f"Google OAuth error: {e}")
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
+
+    client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5173/auth/callback")
+    
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "grant_type": "authorization_code",
+        "redirect_uri": redirect_uri
+    }
+    
+    try:
+        token_response = httpx.post(token_url, data=data).json()
+        if "access_token" not in token_response:
+            raise HTTPException(status_code=400, detail="Failed to get access token from Google")
+            
+        user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+        headers = {"Authorization": f"Bearer {token_response['access_token']}"}
+        user_info = httpx.get(user_info_url, headers=headers).json()
+        
+        email = user_info.get("email")
+        if not email:
+            raise HTTPException(status_code=400, detail="Google account has no email")
+            
+        user = db.query(UserModel).filter(UserModel.email == email).first()
+        if not user:
+            user = UserModel(email=email)
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except Exception as e:
+        logger.error(f"Google OAuth error: {e}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
 
 @app.get("/api/health")
 def health_check():
